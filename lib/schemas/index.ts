@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { ROLES } from "@/lib/auth/roles";
 import { EVENTS, SPORT_CLASSES } from "@/lib/athletes/schema";
 import { RECORD_TYPES } from "@/lib/ledger/chain";
@@ -100,13 +100,21 @@ export const eventSchema = z.object({
   entryStandards: z.record(z.string(), timeHundredths), // e.g. { "T12-400m": 7000 }
   createdBy: uid,
   createdAt: iso,
+  signedHash: hex64, // the admin's passkey-signed creation
+  ledgerSeq: z.number().int(), // EVENT_CREATED record
+  sealedAt: iso.nullable(), // set in the same transaction as the STARTLIST_SEALED record
+  sealedSeq: z.number().int().optional(),
+  listHash: hex64.optional(),
+  count: z.number().int().optional(),
 });
 
 // startLists/{eventId}/athletes/{athleteId}  (Phase 4)
 export const startListEntrySchema = z.object({
   athleteId: uid,
+  fullName: z.string(), // shown to coaches and officials; not part of the sealed fingerprint
   sportClass,
   events: z.array(event).min(1),
+  guideRunner: z.boolean(),
   registeredAt: iso,
   signedHash: hex64, // the athlete's passkey-signed registration
 });
@@ -120,7 +128,10 @@ export const objectionSchema = z.object({
   reason: z.string().min(20).max(1000),
   createdAt: iso,
   signedHash: hex64,
+  ledgerSeq: z.number().int(), // OBJECTION record (holds a fingerprint of the reason, not the text)
   response: z.string().max(1000).nullable(),
+  respondedAt: iso.optional(),
+  responseLedgerSeq: z.number().int().optional(),
 });
 
 // checkIns/{id}  (Phase 5)

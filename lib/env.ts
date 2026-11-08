@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 import { z } from "zod";
 
 /** Server secrets, checked once. A missing secret stops the app instead of running insecurely. */
@@ -11,6 +11,8 @@ const schema = z.object({
   TOTP_MASTER_SECRET: z.string().min(32),
   CRON_SECRET: z.string().min(32),
   RESEND_API_KEY: z.string().optional(),
+  // Resend's test sender only delivers to your own Resend account email. Verify a domain to email everyone.
+  RESEND_FROM: z.string().default("TrackRecord <onboarding@resend.dev>"),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

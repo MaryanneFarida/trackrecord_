@@ -7,6 +7,10 @@ import { ROLE_LABELS, isRole } from "@/lib/auth/roles";
 import { ReviewActions } from "@/components/admin/review-actions";
 import { InviteForm } from "@/components/admin/invite-form";
 import { LedgerHealth } from "@/components/admin/ledger-health";
+import { EventForm } from "@/components/events/event-form";
+import { EventSummary } from "@/components/events/event-summary";
+import { StartListTable } from "@/components/events/start-list-table";
+import { listEvents, listIntact, startList, type EventView } from "@/lib/events/server";
 
 export const metadata = { title: "Federation admin" };
 
@@ -26,6 +30,16 @@ async function Content() {
       <Suspense fallback={<p role="status">Loading applications...</p>}>
         <PendingAthletes />
       </Suspense>
+      <section aria-labelledby="events" className="space-y-4">
+        <h2 id="events" className="text-xl font-semibold">Qualifiers</h2>
+        <p className="text-muted-foreground">
+          Athletes register themselves; the rules decide. Each start list seals itself 24 hours before the race.
+        </p>
+        <EventForm />
+        <Suspense fallback={<p role="status">Loading qualifiers...</p>}>
+          <Events />
+        </Suspense>
+      </section>
       <section aria-labelledby="ledger" className="space-y-4">
         <h2 id="ledger" className="text-xl font-semibold">Ledger health</h2>
         <p className="text-muted-foreground">
@@ -113,5 +127,34 @@ async function RecentInvites() {
         );
       })}
     </ul>
+  );
+}
+
+async function Events() {
+  await requireRole("admin");
+  const events = await listEvents();
+  if (events.length === 0) return <p className="text-muted-foreground">No upcoming qualifiers.</p>;
+  return (
+    <div className="space-y-4">
+      {events.map((ev) => (
+        <Suspense key={ev.id} fallback={<p>Loading {ev.name}...</p>}>
+          <AdminEvent ev={ev} />
+        </Suspense>
+      ))}
+    </div>
+  );
+}
+
+async function AdminEvent({ ev }: { ev: EventView }) {
+  await requireRole("admin");
+  const [rows, intact] = await Promise.all([startList(ev.id), listIntact(ev)]);
+  return (
+    <article className="space-y-3 rounded-lg border p-4" aria-label={ev.name}>
+      <EventSummary ev={ev} intact={intact} />
+      <details>
+        <summary className="min-h-11 cursor-pointer content-center">Start list ({rows.length})</summary>
+        <StartListTable rows={rows} caption={`Start list for ${ev.name}`} />
+      </details>
+    </article>
   );
 }

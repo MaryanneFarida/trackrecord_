@@ -1,4 +1,4 @@
-import type { Firestore } from "firebase-admin/firestore";
+import type { Firestore, Transaction } from "firebase-admin/firestore";
 import type { KeyObject } from "node:crypto";
 import { buildRecord, verifyChain, type LedgerRecord, type RecordType, type VerifyProblem } from "./chain";
 import { merkleRoot } from "./merkle";
@@ -30,6 +30,7 @@ export async function appendRecord(
   signer: Signer,
   type: RecordType,
   payload: Record<string, unknown>,
+  also?: (tx: Transaction, record: LedgerRecord) => Promise<void>,
 ): Promise<LedgerRecord> {
   const clean = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>; // no undefined, no class instances
   return db.runTransaction(
@@ -44,6 +45,9 @@ export async function appendRecord(
         keyId: signer.keyId,
         privateKey: signer.privateKey,
       });
+      // Optional extra reads/writes that must succeed or fail together with this record
+      // (for example "mark the start list sealed"). It may read first, then write.
+      if (also) await also(tx, record);
       const recRef = db.collection(LEDGER).doc(docId(record.seq));
       tx.create(recRef, record); // create() fails if the number somehow already exists
       tx.set(headRef, { seq: record.seq, hash: record.hash, updatedAt: record.createdAt });
