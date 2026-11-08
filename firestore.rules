@@ -1,12 +1,93 @@
 rules_version = '2';
 
-// Phase 0: deny everything. Phase 2 opens exactly what each role needs,
-// keeps permanent collections create-only, and adds rules tests.
-// Remember: server routes use the Admin SDK, which skips these rules.
+// TrackRecord Firestore Security Rules.
+//
+// RULE 1: no browser ever writes to the database. Every write goes through a
+// server route (Admin SDK) that checks the role, the time window and the
+// user's passkey signature. So even a modified app can't write anything.
+//
+// RULE 2: reads are allowed only where a role genuinely needs them. Encrypted
+// photos, medical reports, passkeys and invites are never readable from a browser.
+//
+// REMEMBER: the Admin SDK skips these rules, so every server route must repeat
+// its own checks. These rules are the second lock, not the only one.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() { return signedIn() ? request.auth.token.get('role', '') : ''; }
+    function hasRole(r) { return role() == r; }
+    function anyRole(rs) { return role() in rs; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function staff() { return anyRole(['admin', 'tribunal']); }
+    function owns(field) { return signedIn() && resource.data.get(field, '') == request.auth.uid; }
+
+    // Default: nothing is readable or writable.
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // ---- Identity (Phase 1) ----
+    match /users/{uid} {
+      allow get: if isSelf(uid) || hasRole('admin');
+      match /passkeys/{credentialId} {
+        allow read, write: if false; // server only, even for the owner
+      }
+    }
+    match /athletes/{uid} {
+      allow get: if isSelf(uid) || staff();
+      allow list: if staff();
+    }
+    match /athletePrivate/{uid} {
+      allow read, write: if false; // encrypted ID photos: server only
+    }
+    match /invites/{tokenHash} {
+      allow read, write: if false; // only the server can look up an invite
+    }
+    match /auditLog/{entryId} {
+      allow read: if staff();
+    }
+
+    // ---- Events and start lists (Phase 4) ----
+    match /events/{eventId} {
+      allow read: if signedIn();
+    }
+    match /startLists/{eventId}/athletes/{athleteId} {
+      allow get: if isSelf(athleteId) || anyRole(['coach', 'official', 'admin', 'tribunal']);
+      allow list: if anyRole(['coach', 'official', 'admin', 'tribunal']);
+    }
+    match /objections/{objectionId} {
+      allow read: if staff() || owns('athleteId') || owns('createdBy');
+    }
+
+    // ---- Race day (Phases 5 and 6) ----
+    match /checkIns/{checkInId} {
+      allow read: if anyRole(['official', 'admin', 'tribunal']) || owns('athleteId');
+    }
+    match /entries/{entryId} {
+      allow read: if staff() || owns('createdBy');
+    }
+    match /watchEvidence/{evidenceId} {
+      allow read: if hasRole('tribunal') || owns('athleteId');
+    }
+
+    // ---- The public record (Phases 3, 7, 8) ----
+    // The ledger is public by design: anyone can check it. It holds results and
+    // fingerprints, never medical details or photos.
+    match /ledger/{seq} {
+      allow read: if true;
+    }
+    match /ledgerHead/{docId} {
+      allow read: if true;
+    }
+    match /selectionRules/{season} {
+      allow read: if true;
+    }
+    match /removals/{removalId} {
+      allow read: if true; // the fact, the reason category and a hash only
+    }
+    match /medicalReports/{reportId} {
+      allow read, write: if false; // encrypted: released only to the athlete and tribunal via the server
     }
   }
 }
