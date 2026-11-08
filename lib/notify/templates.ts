@@ -6,7 +6,8 @@ export type Template =
   | { kind: "registration_confirmed"; eventName: string; races: string[]; lockTime: string }
   | { kind: "objection_received"; eventName: string; category: string; reason: string }
   | { kind: "objection_answered"; eventName: string; athleteName: string; response: string }
-  | { kind: "checkin_refused"; eventName: string };
+  | { kind: "checkin_refused"; eventName: string }
+  | { kind: "result_locked" | "result_contested"; eventName: string; race: string; seq: number };
 
 export function render(t: Template, appUrl: string): { subject: string; text: string } {
   switch (t.kind) {
@@ -31,6 +32,18 @@ export function render(t: Template, appUrl: string): { subject: string; text: st
       return {
         subject: `${t.athleteName} answered your objection: ${t.eventName}`,
         text: `${t.athleteName} answered your objection for ${t.eventName}:\n\n${t.response}\n\nSee it at ${appUrl}/coach`,
+      };
+    case "result_locked":
+      return {
+        subject: `Result locked: ${t.race} at ${t.eventName}`,
+        text: `The coach's time and the athlete's time matched, so the ${t.race} result at ${t.eventName} is locked in public ledger record #${t.seq}. Anyone can check it at ${appUrl}/verify/${t.seq}`,
+      };
+    case "result_contested":
+      return {
+        subject: `Result contested: ${t.race} at ${t.eventName}`,
+        text:
+          `The coach's time and the athlete's time for ${t.race} at ${t.eventName} did not match. Both times are now on the public record (ledger record #${t.seq}) ` +
+          `and neither can be changed. The tribunal decides contested results. See ${appUrl}/verify/${t.seq}`,
       };
     case "checkin_refused":
       return {

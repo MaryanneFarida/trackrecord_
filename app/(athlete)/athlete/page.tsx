@@ -8,6 +8,13 @@ import { EventSummary } from "@/components/events/event-summary";
 import { RegisterForm } from "@/components/events/register-form";
 import { RespondForm } from "@/components/events/respond-form";
 import { MyCheckInCode } from "@/components/checkin/my-code";
+import { ResultForm } from "@/components/results/result-form";
+import { ResultStatus } from "@/components/results/result-status";
+import { ENTRIES, RESULTS, type ResultDoc } from "@/lib/results/server";
+import { entryId, resultId } from "@/lib/results/rules";
+import { CHECKIN_STATUS } from "@/lib/checkin/summary";
+import { statusId } from "@/lib/checkin/rules";
+import { formatTime } from "@/lib/schemas";
 
 export const metadata = { title: "Athlete" };
 
@@ -72,7 +79,11 @@ async function Qualifiers({ profile }: { profile: Profile | null }) {
 
 async function AthleteEvent({ ev, uid, profile }: { ev: EventView; uid: string; profile: Profile | null }) {
   await requireRole("athlete");
-  const entry = await adminDb().collection(startListPath(ev.id)).doc(uid).get();
+  const [entry, status] = await Promise.all([
+    adminDb().collection(startListPath(ev.id)).doc(uid).get(),
+    adminDb().collection(CHECKIN_STATUS).doc(statusId(ev.id, uid)).get(),
+  ]);
+  const checkedIn = status.exists;
   const races = profile ? ev.events.filter((r) => profile.events.includes(r)) : [];
   let body;
   if (entry.exists) {
@@ -81,6 +92,7 @@ async function AthleteEvent({ ev, uid, profile }: { ev: EventView; uid: string; 
         <p className="font-medium">You are on this start list for {(entry.get("events") as string[]).join(", ")}.</p>
         <p>Registered {formatEAT(entry.get("registeredAt"))}. Your signed registration fingerprint: <code className="break-all">{String(entry.get("signedHash")).slice(0, 16)}...</code></p>
         {ev.sealedAt ? <p>Sealed in public ledger record #{ev.sealedSeq}.</p> : <p>It will be sealed at {formatEAT(ev.lockTime)}. Check-in opens then.</p>}
+        {checkedIn ? <MyResults ev={ev} uid={uid} races={entry.get("events") as string[]} /> : null}
         {ev.checkInOpen ? (
           <div className="mt-3">
             <MyCheckInCode eventId={ev.id} name={entry.get("fullName")} sportClass={entry.get("sportClass")} />
@@ -133,5 +145,39 @@ async function Objections() {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** After check-in: enter your own time for each race, and see whether it locked or was contested. */
+async function MyResults({ ev, uid, races }: { ev: EventView; uid: string; races: string[] }) {
+  await requireRole("athlete");
+  const db = adminDb();
+  const items = await Promise.all(
+    races.map(async (race) => {
+      const [result, mine] = await Promise.all([
+        db.collection(RESULTS).doc(resultId(ev.id, race, uid)).get(),
+        db.collection(ENTRIES).doc(entryId(ev.id, race, uid, "athlete")).get(),
+      ]);
+      return { race, result: result.exists ? (result.data() as ResultDoc) : null, mine: mine.exists ? (mine.get("hundredths") as number) : null };
+    }),
+  );
+  return (
+    <div className="mt-3 space-y-3 border-t pt-3">
+      <p className="font-medium">Your results</p>
+      {items.map(({ race, result, mine }) => (
+        <div key={race} className="space-y-1">
+          <p className="font-medium">{race}</p>
+          {result ? (
+            <ResultStatus r={result} />
+          ) : mine !== null ? (
+            <p>You signed {formatTime(mine)}. Waiting for your coach to enter theirs.</p>
+          ) : ev.resultsOpen ? (
+            <ResultForm eventId={ev.id} race={race} athleteId={uid} label={`Your ${race} time`} />
+          ) : (
+            <p>The window for entering results has closed.</p>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

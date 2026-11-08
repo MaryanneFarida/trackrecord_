@@ -26,6 +26,7 @@ export interface EventView {
   raceStarted: boolean;
   checkInOpen: boolean;
   checkInCloses: string;
+  resultsOpen: boolean;
 }
 
 export interface StartListRow {
@@ -59,6 +60,7 @@ function toView(id: string, d: FirebaseFirestore.DocumentData): EventView {
     checkInSummarySeq: d.checkInSummarySeq ?? null,
     checkInOpen: checkInOpen({ sealedAt: d.sealedAt, raceStart: d.raceStart }, now),
     checkInCloses: checkInCloses(d.raceStart),
+    resultsOpen: Boolean(d.sealedAt) && now < Date.parse(d.entryWindowEnd),
   };
 }
 
@@ -109,4 +111,10 @@ export async function startList(eventId: string): Promise<StartListRow[]> {
 export async function listIntact(ev: EventView): Promise<boolean | null> {
   if (!ev.listHash) return null;
   return (await currentListHash(adminDb(), ev.id)) === ev.listHash;
+}
+
+/** Athlete ids that are checked in for an event. */
+export async function checkedInIds(eventId: string): Promise<Set<string>> {
+  const snap = await adminDb().collection("checkInStatus").where("eventId", "==", eventId).get();
+  return new Set(snap.docs.map((d) => d.get("athleteId") as string));
 }
