@@ -44,6 +44,7 @@ beforeEach(async () => {
     await setDoc(doc(db, "startLists/nakuru/athletes/farida"), { status: "registered" });
     await setDoc(doc(db, "entries/e1"), { createdBy: "martin", athleteId: "farida", time: 1248 });
     await setDoc(doc(db, "checkIns/c1"), { athleteId: "farida", officialId: "otieno" });
+    await setDoc(doc(db, "checkInStatus/nakuru_farida"), { athleteId: "farida", eventId: "nakuru" });
     await setDoc(doc(db, "ledger/1"), { seq: 1, type: "RESULT_LOCKED", hash: "abc" });
     await setDoc(doc(db, "medicalReports/m1"), { athleteId: "farida", data: "encrypted" });
   });
@@ -127,6 +128,9 @@ describe("Race data", () => {
     await assertSucceeds(getDoc(doc(as("otieno", "official"), "checkIns/c1")));
     await assertSucceeds(getDoc(doc(as("farida", "athlete"), "checkIns/c1")));
     await assertFails(getDoc(doc(as("martin", "coach"), "checkIns/c1")));
+    await assertSucceeds(getDoc(doc(as("farida", "athlete"), "checkInStatus/nakuru_farida")));
+    await assertFails(getDoc(doc(as("martin", "coach"), "checkInStatus/nakuru_farida")));
+    await assertFails(setDoc(doc(as("otieno", "official"), "checkInStatus/nakuru_bob"), { athleteId: "bob" })); // only the server checks people in
   });
 
   it("events are visible to anyone signed in", async () => {

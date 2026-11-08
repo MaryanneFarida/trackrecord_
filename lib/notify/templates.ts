@@ -5,7 +5,8 @@
 export type Template =
   | { kind: "registration_confirmed"; eventName: string; races: string[]; lockTime: string }
   | { kind: "objection_received"; eventName: string; category: string; reason: string }
-  | { kind: "objection_answered"; eventName: string; athleteName: string; response: string };
+  | { kind: "objection_answered"; eventName: string; athleteName: string; response: string }
+  | { kind: "checkin_refused"; eventName: string };
 
 export function render(t: Template, appUrl: string): { subject: string; text: string } {
   switch (t.kind) {
@@ -30,6 +31,14 @@ export function render(t: Template, appUrl: string): { subject: string; text: st
       return {
         subject: `${t.athleteName} answered your objection: ${t.eventName}`,
         text: `${t.athleteName} answered your objection for ${t.eventName}:\n\n${t.response}\n\nSee it at ${appUrl}/coach`,
+      };
+    case "checkin_refused":
+      return {
+        subject: `Check-in refused at ${t.eventName}`,
+        text:
+          `An official refused your check-in at ${t.eventName} because the face check did not match.\n\n` +
+          `If that was you, ask the head official for a second check now: every attempt is recorded and signed, ` +
+          `and a refusal can be challenged at the tribunal. See ${appUrl}/athlete`,
       };
   }
 }

@@ -7,6 +7,7 @@ import { startListPath } from "@/lib/events/seal";
 import { EventSummary } from "@/components/events/event-summary";
 import { RegisterForm } from "@/components/events/register-form";
 import { RespondForm } from "@/components/events/respond-form";
+import { MyCheckInCode } from "@/components/checkin/my-code";
 
 export const metadata = { title: "Athlete" };
 
@@ -79,7 +80,14 @@ async function AthleteEvent({ ev, uid, profile }: { ev: EventView; uid: string; 
       <div className="rounded-md bg-muted p-3 text-sm">
         <p className="font-medium">You are on this start list for {(entry.get("events") as string[]).join(", ")}.</p>
         <p>Registered {formatEAT(entry.get("registeredAt"))}. Your signed registration fingerprint: <code className="break-all">{String(entry.get("signedHash")).slice(0, 16)}...</code></p>
-        {ev.sealedAt ? <p>Sealed in public ledger record #{ev.sealedSeq}.</p> : <p>It will be sealed at {formatEAT(ev.lockTime)}.</p>}
+        {ev.sealedAt ? <p>Sealed in public ledger record #{ev.sealedSeq}.</p> : <p>It will be sealed at {formatEAT(ev.lockTime)}. Check-in opens then.</p>}
+        {ev.checkInOpen ? (
+          <div className="mt-3">
+            <MyCheckInCode eventId={ev.id} name={entry.get("fullName")} sportClass={entry.get("sportClass")} />
+          </div>
+        ) : ev.sealedAt ? (
+          <p>Check-in closed {formatEAT(ev.checkInCloses)}.</p>
+        ) : null}
       </div>
     );
   } else if (!ev.registrationOpen) {
