@@ -62,3 +62,32 @@ export function decodeJpeg(dataUrl: string): Buffer | null {
 }
 
 export type AthleteStatus = "pending" | "verified" | "rejected";
+
+/**
+ * The only reasons an application can be rejected. A fixed list keeps the
+ * decision about identity, not opinion, and makes patterns easy to spot.
+ */
+export const REJECTION_REASONS = [
+  { code: "photo_unclear", label: "A photo is too blurry or dark to check" },
+  { code: "id_unreadable", label: "The name or photo on the ID can't be read" },
+  { code: "id_mismatch", label: "The selfie doesn't match the ID photo" },
+  { code: "name_mismatch", label: "The name given doesn't match the ID" },
+  { code: "licence_not_found", label: "The licence number isn't in the federation register" },
+  { code: "class_not_confirmed", label: "The sport class isn't confirmed by a classification record" },
+  { code: "other", label: "Other (explained in the note)" },
+] as const;
+
+export type RejectionCode = (typeof REJECTION_REASONS)[number]["code"];
+export const rejectionCodes = REJECTION_REASONS.map((r) => r.code) as [RejectionCode, ...RejectionCode[]];
+
+export function rejectionLabel(code: string | null | undefined): string {
+  return REJECTION_REASONS.find((r) => r.code === code)?.label ?? "No reason recorded";
+}
+
+/** Rules for a decision: approvals carry no reason; rejections need a listed reason, and "other" needs a note. */
+export function checkDecision(d: { decision: "approve" | "reject"; reasonCode: string | null; note: string }): string | null {
+  if (d.decision === "approve") return d.reasonCode === null && d.note === "" ? null : "approve_has_reason";
+  if (!d.reasonCode || !(rejectionCodes as readonly string[]).includes(d.reasonCode)) return "reason_required";
+  if (d.reasonCode === "other" && d.note.trim().length < 10) return "note_required";
+  return null;
+}

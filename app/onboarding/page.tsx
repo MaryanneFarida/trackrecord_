@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import { homeFor } from "@/lib/auth/roles";
 import { adminDb } from "@/lib/firebase/admin";
 import { OnboardingForm } from "@/components/athletes/onboarding-form";
+import { rejectionLabel } from "@/lib/athletes/schema";
 
 export const metadata = { title: "Register as an athlete" };
 
@@ -42,7 +43,8 @@ async function Content() {
         <>
           {status === "rejected" ? (
             <p role="alert" className="rounded-lg border border-destructive p-4">
-              Your last application wasn&apos;t approved: <strong>{String(app.get("rejectionReason") ?? "no reason given")}</strong>.
+              Your last application wasn&apos;t approved. Reason: <strong>{rejectionLabel(app.get("rejectionCode"))}</strong>
+              {app.get("rejectionNote") ? <> Note from the federation: &quot;{String(app.get("rejectionNote"))}&quot;</> : null}.
               You can correct it and apply again below.
             </p>
           ) : null}
