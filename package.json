@@ -13,6 +13,8 @@
     "keys": "node scripts/generate-keys.mjs"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.1.0",
     "canonicalize": "^5.1.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",

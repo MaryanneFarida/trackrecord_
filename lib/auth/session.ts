@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 import { redirect } from "next/navigation";
 import { isRole, type Role } from "@/lib/auth/roles";
+import { hasPasskey } from "@/lib/passkeys/firestore-store";
 
 /**
  * Sessions: the browser never keeps a Firebase token. After sign-in the
@@ -17,6 +18,7 @@ export interface Session {
   uid: string;
   email: string | null;
   role: Role | null;
+  authTime: number; // unix seconds of the actual sign-in (used to require a recent sign-in)
 }
 
 /** The signed-in user, or null. Checks the cookie AND whether it was revoked. */
@@ -26,7 +28,12 @@ export async function getSession(): Promise<Session | null> {
   if (!value) return null;
   try {
     const decoded = await adminAuth().verifySessionCookie(value, true);
-    return { uid: decoded.uid, email: decoded.email ?? null, role: isRole(decoded.role) ? decoded.role : null };
+    return {
+      uid: decoded.uid,
+      email: decoded.email ?? null,
+      role: isRole(decoded.role) ? decoded.role : null,
+      authTime: decoded.auth_time,
+    };
   } catch {
     return null; // expired, revoked or forged
   }
@@ -41,5 +48,7 @@ export async function requireRole(role: Role): Promise<Session> {
   const session = await getSession();
   if (!session) redirect(`/login?next=/${role}`);
   if (session.role !== role) redirect("/no-access");
+  // Every TrackRecord user must hold a passkey before using their area.
+  if (!(await hasPasskey(session.uid))) redirect(`/account/passkeys?setup=1&next=/${role}`);
   return session;
 }
