@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     consentAt: now,
     status: "pending",
     submittedAt: now,
-    rejectionReason: null,
+    rejectionCode: null,
+    rejectionNote: null,
   });
   await batch.commit();
   audit("athlete.applied", session.uid, { resubmission: existing.exists });

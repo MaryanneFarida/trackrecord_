@@ -30,3 +30,24 @@ describe("athlete application", () => {
     expect(decodeJpeg(png)).toBeNull();
   });
 });
+
+import { checkDecision, rejectionLabel } from "./schema";
+
+describe("rejection reasons", () => {
+  it("approval carries no reason", () => {
+    expect(checkDecision({ decision: "approve", reasonCode: null, note: "" })).toBeNull();
+    expect(checkDecision({ decision: "approve", reasonCode: "id_mismatch", note: "" })).toBe("approve_has_reason");
+  });
+  it("rejection needs a reason from the fixed list", () => {
+    expect(checkDecision({ decision: "reject", reasonCode: null, note: "I don't like them" })).toBe("reason_required");
+    expect(checkDecision({ decision: "reject", reasonCode: "made_up", note: "" })).toBe("reason_required");
+    expect(checkDecision({ decision: "reject", reasonCode: "photo_unclear", note: "" })).toBeNull();
+  });
+  it("'other' must be explained", () => {
+    expect(checkDecision({ decision: "reject", reasonCode: "other", note: "no" })).toBe("note_required");
+    expect(checkDecision({ decision: "reject", reasonCode: "other", note: "ID card has expired in 2024" })).toBeNull();
+  });
+  it("gives readable labels", () => {
+    expect(rejectionLabel("id_mismatch")).toContain("doesn't match");
+  });
+});

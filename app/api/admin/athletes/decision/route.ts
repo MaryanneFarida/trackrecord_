@@ -3,13 +3,15 @@ import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { apiSession } from "@/lib/auth/api";
 import { verifySignedAction } from "@/lib/passkeys/signed-action";
 import { audit } from "@/lib/passkeys/http";
+import { checkDecision, rejectionCodes } from "@/lib/athletes/schema";
 
 const payloadSchema = z
   .object({
     action: z.literal("athlete.decision"),
     athleteUid: z.string().min(1).max(128),
     decision: z.enum(["approve", "reject"]),
-    reason: z.string().max(300), // not trimmed: must match what the admin signed
+    reasonCode: z.enum(rejectionCodes).nullable(), // fixed list only
+    note: z.string().max(300), // not trimmed: must match what the admin signed
     at: z.string().datetime(),
   })
   .strict();
@@ -22,7 +24,8 @@ export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "bad_request" }, { status: 400 });
   const p = parsed.data.payload;
-  if (p.decision === "reject" && p.reason.length < 5) return Response.json({ error: "reason_required" }, { status: 400 });
+  const rule = checkDecision(p);
+  if (rule) return Response.json({ error: rule }, { status: 400 });
   if (Math.abs(Date.now() - Date.parse(p.at)) > 10 * 60 * 1000) return Response.json({ error: "stale" }, { status: 400 });
 
   const signed = await verifySignedAction({ req, session, payload: p, assertion: parsed.data.assertion, action: p.action });
@@ -36,14 +39,15 @@ export async function POST(req: Request) {
   if (p.decision === "approve") {
     await adminAuth().setCustomUserClaims(p.athleteUid, { role: "athlete" });
     await adminAuth().revokeRefreshTokens(p.athleteUid); // next sign-in carries the new role
-    await ref.update({ status: "verified", verifiedBy: session.uid, verifiedAt: now, rejectionReason: null });
+    await ref.update({ status: "verified", verifiedBy: session.uid, verifiedAt: now, rejectionCode: null, rejectionNote: null });
     await adminDb().collection("users").doc(p.athleteUid).set({ role: "athlete" }, { merge: true });
   } else {
-    await ref.update({ status: "rejected", rejectionReason: p.reason, reviewedBy: session.uid, reviewedAt: now });
+    await ref.update({ status: "rejected", rejectionCode: p.reasonCode, rejectionNote: p.note || null, reviewedBy: session.uid, reviewedAt: now });
   }
   audit(`athlete.${p.decision === "approve" ? "verified" : "rejected"}`, session.uid, {
     athleteUid: p.athleteUid,
-    reason: p.reason || null,
+    reasonCode: p.reasonCode,
+    note: p.note || null,
     signedHash: signed.actionHash,
     passkeyId: signed.passkeyId,
   });
