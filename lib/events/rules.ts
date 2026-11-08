@@ -43,7 +43,7 @@ export const eventCreatePayload = z
     name: z.string().min(3).max(80),
     venue: z.string().min(2).max(80),
     raceStart: z.string().datetime(),
-    races,
+    races: z.array(z.enum(EVENTS)).min(1).max(EVENTS.length), // a qualifier can host every race; an athlete enters at most 4
     classes: z.array(z.enum(classCodes)).min(1).max(SPORT_CLASSES.length),
     at: z.string().datetime(),
   })
@@ -184,6 +184,7 @@ export const RULE_MESSAGES: Record<string, string> = {
   too_far: "The race must be within the next year.",
   not_found: "Not found.",
   stale: "That request is too old. Please try again.",
+  bad_request: "The form was rejected. Check every field and try again.",
 };
 
 /** Dates shown in Kenyan time, whatever the server's time zone. */
