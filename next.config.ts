@@ -10,8 +10,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
   poweredByHeader: false,
   experimental: {
     // Failed page loads and Server Actions wait and retry when the network returns.
