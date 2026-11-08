@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -19,3 +19,20 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # Proves the database itself refuses what it should, against the real Firestore emulator.
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm install -g firebase-tools@15
+      - run: npm run test:rules

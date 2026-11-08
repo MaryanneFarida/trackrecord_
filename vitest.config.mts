@@ -2,6 +2,6 @@
 import path from "node:path";
 
 export default defineConfig({
-  test: { environment: "node", include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**"] },
+  test: { environment: "node", include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**", "tests/rules/**"] },
   resolve: { alias: { "@": path.resolve(import.meta.dirname) } },
 });
