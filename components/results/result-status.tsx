@@ -16,7 +16,7 @@ export function ResultStatus({ r }: { r: ResultDoc }) {
     <p className="text-sm">
       <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">Contested</span> coach {formatTime(r.coachHundredths)} vs athlete{" "}
       {formatTime(r.athleteHundredths)}.{" "}
-      <Link href={`/verify/${r.ledgerSeq}`} className="underline underline-offset-4">Ledger #{r.ledgerSeq}</Link>
+      <Link href={`/verify/${r.ledgerSeq}`} className="underline underline-offset-4">See the record and share it with the tribunal</Link>
     </p>
   );
 }

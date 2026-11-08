@@ -1,17 +1,17 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { adminDb } from "@/lib/firebase/admin";
 import { docId, LEDGER, HEAD } from "@/lib/ledger/store";
 import { verifyRecord, type LedgerRecord } from "@/lib/ledger/chain";
 import { publicKeys } from "@/lib/ledger/server";
 import { formatTime } from "@/lib/schemas";
-import { formatEAT } from "@/lib/events/rules";
-import { PrintButton } from "@/components/results/print-button";
+import { categoryLabel, formatEAT } from "@/lib/events/rules";
+import { ShareRecord } from "@/components/results/share-record";
 
 export const metadata = { title: "Verify a record" };
 
 /**
  * Public, no sign-in: anyone (a selector, a journalist, the tribunal) can check
- * that a record is genuine. For a locked result it doubles as the certificate.
+ * that a record is genuine. Written for people, with the technical proof folded away.
  */
 export default function VerifyPage({ params }: PageProps<"/verify/[recordId]">) {
   return (
@@ -21,6 +21,29 @@ export default function VerifyPage({ params }: PageProps<"/verify/[recordId]">) 
       </Suspense>
     </section>
   );
+}
+
+interface Ctx {
+  athleteName: string | null;
+  sportClass: string | null;
+  eventName: string | null;
+  venue: string | null;
+  raceStart: string | null;
+}
+
+async function context(p: Record<string, unknown>): Promise<Ctx> {
+  const db = adminDb();
+  const [a, e] = await Promise.all([
+    typeof p.athleteId === "string" ? db.collection("athletes").doc(p.athleteId).get() : null,
+    typeof p.eventId === "string" ? db.collection("events").doc(p.eventId).get() : null,
+  ]);
+  return {
+    athleteName: a?.get("fullName") ?? null,
+    sportClass: a?.get("sportClass") ?? null,
+    eventName: e?.get("name") ?? null,
+    venue: e?.get("venue") ?? null,
+    raceStart: e?.exists ? e.get("raceStart") : null,
+  };
 }
 
 async function RecordView({ params }: { params: PageProps<"/verify/[recordId]">["params"] }) {
@@ -36,83 +59,194 @@ async function RecordView({ params }: { params: PageProps<"/verify/[recordId]">[
   ]);
   if (!doc.exists) return <p role="alert">Record #{seq} does not exist.</p>;
   const r = doc.data() as LedgerRecord;
+  const p = r.payload as Record<string, unknown>;
+  const ctx = await context(p);
 
+  const problems = verifyRecord(r, publicKeys());
   const checks = [
-    { label: "The record's contents match its fingerprint (hash)", ok: verifyRecord(r, publicKeys()).every((p) => p.problem !== "hash_mismatch") },
-    { label: "Signed by TrackRecord's published key", ok: verifyRecord(r, publicKeys()).length === 0 },
-    { label: "Linked to the record before it", ok: seq === 1 ? r.prevHash === "0".repeat(64) : Boolean(prev?.exists) && prev!.get("hash") === r.prevHash },
-    { label: "The record after it still points to it", ok: next.exists ? next.get("prevHash") === r.hash : (head.get("seq") as number) === seq && head.get("hash") === r.hash },
+    { label: "Its contents haven't been changed since it was recorded", ok: problems.every((x) => x.problem !== "hash_mismatch") },
+    { label: "It was signed by TrackRecord's published key", ok: problems.length === 0 },
+    { label: "It is linked to the record before it", ok: seq === 1 ? r.prevHash === "0".repeat(64) : Boolean(prev?.exists) && prev!.get("hash") === r.prevHash },
+    { label: "Nothing after it has been removed or rewritten", ok: next.exists ? next.get("prevHash") === r.hash : (head.get("seq") as number) === seq && head.get("hash") === r.hash },
   ];
   const allOk = checks.every((c) => c.ok);
 
   return (
     <>
-      {r.type === "RESULT_LOCKED" ? <Certificate r={r} /> : <Generic r={r} />}
-      <div className="space-y-2 rounded-lg border p-4">
-        <h2 className="text-lg font-semibold">{allOk ? "This record is genuine and unchanged" : "WARNING: this record failed a check"}</h2>
+      <Body r={r} ctx={ctx} />
+
+      <div className={`space-y-2 rounded-lg border-2 p-4 ${allOk ? "" : "border-destructive"}`}>
+        <h2 className="text-lg font-semibold">{allOk ? "This record is genuine and unchanged" : "Warning: this record failed a check"}</h2>
         <ul className="space-y-1">
           {checks.map((c) => (
             <li key={c.label}>
-              <span aria-hidden="true">{c.ok ? "[OK]" : "[FAILED]"}</span> {c.label}
-              <span className="sr-only">{c.ok ? ": passed" : ": failed"}</span>
+              <span aria-hidden="true">{c.ok ? "\u2713" : "\u2717"}</span> {c.label}
+              <span className="sr-only">{c.ok ? ": passed" : ": FAILED"}</span>
             </li>
           ))}
         </ul>
-        <p className="break-all text-xs text-muted-foreground">
-          Record #{r.seq}, created {formatEAT(r.createdAt)}. Fingerprint {r.hash}
-        </p>
+        <p className="text-sm text-muted-foreground">Public record #{r.seq}, recorded {formatEAT(r.createdAt)}.</p>
       </div>
-      <PrintButton />
+
+      <details className="rounded-lg border p-4 text-sm">
+        <summary className="min-h-11 cursor-pointer content-center font-medium">Technical details (for experts)</summary>
+        <div className="mt-3 space-y-2 break-all">
+          <p>Fingerprint (SHA-256): <code>{r.hash}</code></p>
+          <p>Previous record&apos;s fingerprint: <code>{r.prevHash}</code></p>
+          <p>Signing key: <code>{r.keyId}</code></p>
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted p-3 text-xs">{JSON.stringify(r.payload, null, 2)}</pre>
+        </div>
+      </details>
     </>
   );
 }
 
-async function Certificate({ r }: { r: LedgerRecord }) {
-  const p = r.payload as { eventId: string; race: string; athleteId: string; hundredths: number };
-  const db = adminDb();
-  const [athlete, ev] = await Promise.all([db.collection("athletes").doc(p.athleteId).get(), db.collection("events").doc(p.eventId).get()]);
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="space-y-3 rounded-lg border-4 border-double p-6 text-center">
-      <p className="text-sm uppercase tracking-widest text-muted-foreground">TrackRecord verified result</p>
-      <h1 className="text-3xl font-semibold">{athlete.get("fullName") ?? "Athlete"}</h1>
-      <p className="text-lg">
-        Class {athlete.get("sportClass") ?? "-"} - {p.race}
-      </p>
-      <p className="font-mono text-5xl font-semibold">{formatTime(p.hundredths)}</p>
-      <p>
-        {ev.get("name") ?? "Qualifier"}, {ev.get("venue") ?? ""}
-        <br />
-        {ev.exists ? formatEAT(ev.get("raceStart")) : ""}
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Entered separately by the coach and the athlete, each signed with their own passkey. The two times matched, so the
-        result was locked into TrackRecord&apos;s public ledger and can never be changed silently.
-      </p>
+    <div className="grid grid-cols-[9rem_1fr] gap-2 border-b py-2 last:border-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium">{children}</dd>
     </div>
   );
 }
 
-const TITLES: Record<string, string> = {
-  EVENT_CREATED: "Qualifier created",
-  STARTLIST_SEALED: "Start list sealed",
-  OBJECTION: "Objection raised",
-  OBJECTION_RESPONSE: "Objection answered",
-  CHECKIN_SUMMARY: "Check-in closed",
-  RESULT_CONTESTED: "Result contested",
-};
+function Where({ ctx }: { ctx: Ctx }) {
+  return (
+    <>
+      {ctx.eventName ? <Row label="Qualifier">{ctx.eventName}</Row> : null}
+      {ctx.venue ? <Row label="Venue">{ctx.venue}</Row> : null}
+      {ctx.raceStart ? <Row label="Date">{formatEAT(ctx.raceStart)}</Row> : null}
+    </>
+  );
+}
 
-function Generic({ r }: { r: LedgerRecord }) {
+function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
   const p = r.payload as Record<string, unknown>;
+  const athlete = ctx.athleteName ?? "The athlete";
+
+  if (r.type === "RESULT_LOCKED") {
+    return (
+      <>
+        <div className="space-y-3 rounded-lg border-4 border-double p-6 text-center">
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">TrackRecord verified result</p>
+          <h1 className="text-3xl font-semibold">{athlete}</h1>
+          <p className="text-lg">
+            {ctx.sportClass ? `Class ${ctx.sportClass} - ` : ""}
+            {String(p.race)}
+          </p>
+          <p className="font-mono text-5xl font-semibold">{formatTime(p.hundredths as number)}</p>
+          <p>
+            {ctx.eventName ?? "Qualifier"}
+            {ctx.venue ? `, ${ctx.venue}` : ""}
+            {ctx.raceStart ? <><br />{formatEAT(ctx.raceStart)}</> : null}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            The coach and the athlete entered this time separately, each signed with their own passkey. The two times
+            matched, so it was locked into TrackRecord&apos;s public record and can never be changed silently.
+          </p>
+        </div>
+        <ShareRecord title={`Verified result: ${athlete}, ${String(p.race)}`} summary={`${athlete} ran ${String(p.race)} in ${formatTime(p.hundredths as number)} at ${ctx.eventName ?? "a TrackRecord qualifier"}.`} />
+      </>
+    );
+  }
+
+  if (r.type === "RESULT_CONTESTED") {
+    const coach = formatTime(p.coachHundredths as number);
+    const mine = formatTime(p.athleteHundredths as number);
+    const summary = `Contested result: ${athlete}, ${String(p.race)} at ${ctx.eventName ?? "a TrackRecord qualifier"}. The coach entered ${coach}; the athlete entered ${mine}.`;
+    return (
+      <>
+        <div className="space-y-4">
+          <p className="inline-block rounded-full bg-destructive/10 px-3 py-1 text-sm font-semibold text-destructive">Contested result</p>
+          <h1 className="text-2xl font-semibold">
+            {athlete}, {String(p.race)}: the two times don&apos;t match
+          </h1>
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">Coach entered</p>
+              <p className="font-mono text-3xl font-semibold">{coach}</p>
+            </div>
+            <div className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">Athlete entered</p>
+              <p className="font-mono text-3xl font-semibold">{mine}</p>
+            </div>
+          </div>
+          <dl>
+            <Row label="Athlete">{athlete}{ctx.sportClass ? ` (class ${ctx.sportClass})` : ""}</Row>
+            <Row label="Race">{String(p.race)}</Row>
+            <Where ctx={ctx} />
+            <Row label="Status">Waiting for the tribunal</Row>
+          </dl>
+          <div className="space-y-2 rounded-lg bg-muted p-4">
+            <h2 className="font-semibold">What happens now</h2>
+            <ol className="list-decimal space-y-1 pl-5">
+              <li>Both times are locked on the public record. Neither the coach nor the athlete can change them.</li>
+              <li>Share this page with the Sports Disputes Tribunal or the federation. They can check it without an account.</li>
+              <li>The tribunal decides the final time. Its decision will be added on top of this record; this disagreement stays visible.</li>
+            </ol>
+          </div>
+        </div>
+        <ShareRecord primary title={`Contested result: ${athlete}, ${String(p.race)}`} summary={summary} />
+      </>
+    );
+  }
+
+  const simple: Record<string, { title: string; lines: ReactNode }> = {
+    EVENT_CREATED: {
+      title: "A qualifier was created",
+      lines: (
+        <dl>
+          <Row label="Qualifier">{String(p.name)}</Row>
+          <Row label="Venue">{String(p.venue)}</Row>
+          <Row label="First race">{formatEAT(String(p.raceStart))}</Row>
+          <Row label="List locks">{formatEAT(String(p.lockTime))}</Row>
+          <Row label="Races">{(p.events as string[]).join(", ")}</Row>
+          <Row label="Classes">{(p.classes as string[]).join(", ")}</Row>
+        </dl>
+      ),
+    },
+    STARTLIST_SEALED: {
+      title: "A start list was sealed",
+      lines: (
+        <dl>
+          <Where ctx={ctx} />
+          <Row label="Athletes">{String(p.count)}</Row>
+          <Row label="Meaning">From this moment, adding or removing anyone shows up as a mismatch with this seal.</Row>
+        </dl>
+      ),
+    },
+    OBJECTION: {
+      title: "A coach objected to an entry",
+      lines: (
+        <dl>
+          <Where ctx={ctx} />
+          <Row label="Reason category">{categoryLabel(String(p.category))}</Row>
+          <Row label="Meaning">An objection removes nobody. The athlete was told and can answer it.</Row>
+        </dl>
+      ),
+    },
+    OBJECTION_RESPONSE: {
+      title: "An athlete answered an objection",
+      lines: <p>The answer is kept with the objection for the tribunal.</p>,
+    },
+    CHECKIN_SUMMARY: {
+      title: "Check-in closed",
+      lines: (
+        <dl>
+          <Where ctx={ctx} />
+          <Row label="Checked in">{(p.checkedIn as string[]).length}</Row>
+          <Row label="Refused at face check">{(p.refusedFace as string[]).length}</Row>
+          <Row label="Didn't show">{(p.noShow as string[]).length}</Row>
+        </dl>
+      ),
+    },
+  };
+  const s = simple[r.type] ?? { title: `Record type: ${r.type}`, lines: null };
   return (
     <div className="space-y-3">
-      <h1 className="text-2xl font-semibold">{TITLES[r.type] ?? r.type}</h1>
-      {r.type === "RESULT_CONTESTED" ? (
-        <p>
-          {String(p.race)}: the coach entered <strong className="font-mono">{formatTime(p.coachHundredths as number)}</strong> and the athlete entered{" "}
-          <strong className="font-mono">{formatTime(p.athleteHundredths as number)}</strong>. Both are permanently on the record; the tribunal decides.
-        </p>
-      ) : null}
-      <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(p, null, 2)}</pre>
+      <h1 className="text-2xl font-semibold">{s.title}</h1>
+      {s.lines}
+      <ShareRecord title={s.title} summary={`TrackRecord public record #${r.seq}: ${s.title}.`} />
     </div>
   );
 }
