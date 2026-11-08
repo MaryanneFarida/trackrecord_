@@ -3,6 +3,8 @@ import { adminDb } from "@/lib/firebase/admin";
 import { systemSigner } from "@/lib/ledger/server";
 import { dueForSealing, registrationOpen, type EventRules } from "./rules";
 import { EVENTS_COLLECTION, currentListHash, sealStartList, startListPath } from "./seal";
+import { checkInCloses, checkInOpen, dueForCheckInSummary } from "@/lib/checkin/rules";
+import { closeCheckIn } from "@/lib/checkin/summary";
 
 export interface EventView {
   id: string;
@@ -18,9 +20,12 @@ export interface EventView {
   listHash: string | null;
   count: number | null;
   ledgerSeq: number | null;
+  checkInSummarySeq: number | null;
   /** Worked out when loaded, so pages don't read the clock while rendering. */
   registrationOpen: boolean;
   raceStarted: boolean;
+  checkInOpen: boolean;
+  checkInCloses: string;
 }
 
 export interface StartListRow {
@@ -51,6 +56,9 @@ function toView(id: string, d: FirebaseFirestore.DocumentData): EventView {
     ledgerSeq: d.ledgerSeq ?? null,
     registrationOpen: registrationOpen({ lockTime: d.lockTime, sealedAt: d.sealedAt } as EventRules, now),
     raceStarted: now >= Date.parse(d.raceStart),
+    checkInSummarySeq: d.checkInSummarySeq ?? null,
+    checkInOpen: checkInOpen({ sealedAt: d.sealedAt, raceStart: d.raceStart }, now),
+    checkInCloses: checkInCloses(d.raceStart),
   };
 }
 
@@ -71,15 +79,21 @@ export async function getEvent(id: string): Promise<EventView | null> {
   return doc.exists ? sealIfDue(toView(doc.id, doc.data()!)) : null;
 }
 
+/** Moves an event along its timeline: seal the list when due, then close check-in when due. */
 async function sealIfDue(ev: EventView): Promise<EventView> {
-  if (!dueForSealing(ev, Date.now())) return ev;
+  const now = Date.now();
+  if (!dueForSealing(ev, now) && !dueForCheckInSummary(ev, now)) return ev;
   try {
-    const r = await sealStartList(adminDb(), systemSigner(), ev.id);
+    if (dueForSealing(ev, now)) {
+      const r = await sealStartList(adminDb(), systemSigner(), ev.id);
+      if (r.sealed) console.info(`start list sealed: ${ev.id} as ledger record ${r.sealedSeq}`);
+    }
+    const r2 = await closeCheckIn(adminDb(), systemSigner(), ev.id);
+    if (r2.closed) console.info(`check-in closed: ${ev.id} as ledger record ${r2.seq}`);
     const doc = await adminDb().collection(EVENTS_COLLECTION).doc(ev.id).get();
-    if (r.sealed) console.info(`start list sealed: ${ev.id} as ledger record ${r.sealedSeq}`);
     return toView(doc.id, doc.data()!);
   } catch (err) {
-    console.error("sealing failed, will retry on next view", ev.id, err);
+    console.error("event timeline step failed, will retry on next view", ev.id, err);
     return ev;
   }
 }

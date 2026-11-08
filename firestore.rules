@@ -64,6 +64,9 @@ service cloud.firestore {
     match /checkIns/{checkInId} {
       allow read: if anyRole(['official', 'admin', 'tribunal']) || owns('athleteId');
     }
+    match /checkInStatus/{statusId} {
+      allow read: if anyRole(['official', 'admin', 'tribunal']) || owns('athleteId');
+    }
     match /entries/{entryId} {
       allow read: if staff() || owns('createdBy');
     }

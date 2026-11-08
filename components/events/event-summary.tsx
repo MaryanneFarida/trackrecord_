@@ -21,6 +21,8 @@ export function EventSummary({ ev, intact }: { ev: EventView; intact?: boolean |
           <span className="rounded-full bg-muted px-2 py-0.5 font-medium">Open</span> Registration closes and the list seals at {formatEAT(ev.lockTime)}
         </p>
       )}
+      {ev.checkInOpen ? <p className="text-sm">Check-in is open until {formatEAT(ev.checkInCloses)}.</p> : null}
+      {ev.checkInSummarySeq ? <p className="text-sm">Check-in closed: summary in ledger record #{ev.checkInSummarySeq}.</p> : null}
       {ev.ledgerSeq ? <p className="text-xs text-muted-foreground">Rules recorded as ledger record #{ev.ledgerSeq}</p> : null}
     </div>
   );
