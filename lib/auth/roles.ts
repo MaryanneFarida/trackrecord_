@@ -10,3 +10,12 @@ export const ROLE_LABELS: Record<Role, string> = {
   admin: "Federation admin",
   tribunal: "Tribunal",
 };
+
+export function isRole(value: unknown): value is Role {
+  return typeof value === "string" && (ROLES as readonly string[]).includes(value);
+}
+
+/** Where each role lands after signing in. No role yet -> waiting page. */
+export function homeFor(role: Role | null): string {
+  return role ? `/${role}` : "/pending";
+}
