@@ -6,7 +6,7 @@ import { appendRecord, verifyStoredChain, sealDay } from "./store";
 import type { RecordType } from "./chain";
 
 /** The system's signing key (from SIGNING_PRIVATE_KEY). Never leaves the server. */
-function signer() {
+export function systemSigner() {
   const env = serverEnv();
   return { keyId: env.SIGNING_KEY_ID, privateKey: loadPrivateKey(env.SIGNING_PRIVATE_KEY) };
 }
@@ -18,6 +18,7 @@ export function publicKeys() {
 }
 
 /** Use this in every phase that records something permanent. */
-export const ledgerAppend = (type: RecordType, payload: Record<string, unknown>) => appendRecord(adminDb(), signer(), type, payload);
+export const ledgerAppend = (type: RecordType, payload: Record<string, unknown>, also?: Parameters<typeof appendRecord>[4]) =>
+  appendRecord(adminDb(), systemSigner(), type, payload, also);
 export const ledgerVerify = () => verifyStoredChain(adminDb(), publicKeys());
 export const ledgerSealDay = (day: string) => sealDay(adminDb(), day);

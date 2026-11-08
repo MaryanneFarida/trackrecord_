@@ -1,4 +1,4 @@
-﻿import type { KeyObject } from "node:crypto";
+import type { KeyObject } from "node:crypto";
 import { sha256Hex } from "./hash";
 import { signHash, verifyHash } from "./sign";
 
@@ -10,6 +10,8 @@ import { signHash, verifyHash } from "./sign";
 export const RECORD_TYPES = [
   "STARTLIST_SEALED", "OBJECTION", "CHECKIN_SUMMARY", "RESULT_LOCKED", "RESULT_CONTESTED",
   "SELECTION_RULES", "FINAL_LIST", "REMOVAL", "REMOVAL_RESPONSE", "KEY_ROTATION",
+  // Phase 4 (new types are only ever added at the end)
+  "EVENT_CREATED", "OBJECTION_RESPONSE",
 ] as const;
 export type RecordType = (typeof RECORD_TYPES)[number];
 
