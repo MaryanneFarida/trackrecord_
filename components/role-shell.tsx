@@ -30,6 +30,7 @@ async function Guard({ role, children }: { role: Role; children: ReactNode }) {
         <div className="flex items-center gap-3">
           <span className="rounded-full bg-muted px-3 py-1 text-sm">{ROLE_LABELS[role]}</span>
           <span className="hidden text-sm text-muted-foreground sm:inline">{session.email}</span>
+          <Link href="/account/passkeys" className="text-sm underline underline-offset-4">Passkeys</Link>
           <SignOutButton />
         </div>
       </nav>
