@@ -136,9 +136,12 @@ describe("Race data", () => {
 });
 
 describe("The public record", () => {
-  it("anyone, even signed out, can read the ledger", async () => {
+  it("anyone, even signed out, can read the ledger and its daily roots, but never write them", async () => {
     await assertSucceeds(getDoc(doc(anon(), "ledger/1")));
     await assertSucceeds(getDocs(collection(anon(), "ledger")));
+    await assertSucceeds(getDoc(doc(anon(), "ledgerDays/2026-11-08")));
+    await assertFails(setDoc(doc(as("boss", "admin"), "ledgerDays/2026-11-08"), { root: "forged" }));
+    await assertFails(setDoc(doc(as("boss", "admin"), "ledgerHead/head"), { seq: 0 }));
   });
 
   it("medical reports are never readable from a browser", async () => {
