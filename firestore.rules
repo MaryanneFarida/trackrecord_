@@ -70,6 +70,10 @@ service cloud.firestore {
     match /entries/{entryId} {
       allow read: if staff() || owns('createdBy');
     }
+    // Decided results (locked or contested) are visible to anyone signed in; the ledger has them publicly anyway.
+    match /results/{resultId} {
+      allow read: if signedIn();
+    }
     match /watchEvidence/{evidenceId} {
       allow read: if hasRole('tribunal') || owns('athleteId');
     }

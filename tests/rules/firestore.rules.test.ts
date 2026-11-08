@@ -45,6 +45,7 @@ beforeEach(async () => {
     await setDoc(doc(db, "entries/e1"), { createdBy: "martin", athleteId: "farida", time: 1248 });
     await setDoc(doc(db, "checkIns/c1"), { athleteId: "farida", officialId: "otieno" });
     await setDoc(doc(db, "checkInStatus/nakuru_farida"), { athleteId: "farida", eventId: "nakuru" });
+    await setDoc(doc(db, "results/nakuru_400m_farida"), { athleteId: "farida", status: "locked", hundredths: 5231 });
     await setDoc(doc(db, "ledger/1"), { seq: 1, type: "RESULT_LOCKED", hash: "abc" });
     await setDoc(doc(db, "medicalReports/m1"), { athleteId: "farida", data: "encrypted" });
   });
@@ -131,6 +132,12 @@ describe("Race data", () => {
     await assertSucceeds(getDoc(doc(as("farida", "athlete"), "checkInStatus/nakuru_farida")));
     await assertFails(getDoc(doc(as("martin", "coach"), "checkInStatus/nakuru_farida")));
     await assertFails(setDoc(doc(as("otieno", "official"), "checkInStatus/nakuru_bob"), { athleteId: "bob" })); // only the server checks people in
+  });
+
+  it("results: readable when signed in, never writable from a browser", async () => {
+    await assertSucceeds(getDoc(doc(as("martin", "coach"), "results/nakuru_400m_farida")));
+    await assertFails(getDoc(doc(anon(), "results/nakuru_400m_farida")));
+    await assertFails(setDoc(doc(as("farida", "athlete"), "results/nakuru_400m_farida"), { hundredths: 4000 }));
   });
 
   it("events are visible to anyone signed in", async () => {

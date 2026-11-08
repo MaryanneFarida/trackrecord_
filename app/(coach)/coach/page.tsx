@@ -6,6 +6,12 @@ import { categoryLabel, formatEAT } from "@/lib/events/rules";
 import { EventSummary } from "@/components/events/event-summary";
 import { StartListTable } from "@/components/events/start-list-table";
 import { ObjectionForm } from "@/components/events/objection-form";
+import { ResultForm } from "@/components/results/result-form";
+import { ResultStatus } from "@/components/results/result-status";
+import { checkedInIds } from "@/lib/events/server";
+import { coachEntriesFor, resultsFor } from "@/lib/results/server";
+import { resultId } from "@/lib/results/rules";
+import { formatTime } from "@/lib/schemas";
 
 export const metadata = { title: "Coach" };
 
@@ -28,6 +34,9 @@ async function Content() {
           you can object on the record. An objection never removes anyone: it goes to the athlete and the tribunal.
         </p>
       </div>
+      <Suspense fallback={<p role="status">Loading results...</p>}>
+        <Results />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading start lists...</p>}>
         <Lists />
       </Suspense>
@@ -101,5 +110,64 @@ async function MyObjections() {
         ))}
       </ul>
     </section>
+  );
+}
+
+async function Results() {
+  await requireRole("coach");
+  const events = (await listEvents()).filter((e) => e.resultsOpen);
+  if (events.length === 0) return null;
+  return (
+    <section aria-labelledby="results" className="space-y-4">
+      <h2 id="results" className="text-xl font-semibold">Enter results</h2>
+      <p className="text-sm text-muted-foreground">
+        Enter each checked-in athlete&apos;s time. The athlete enters their own time separately. If the two match, the
+        result locks into the public ledger; if not, both times go on the record as contested. Signed times can&apos;t be changed.
+      </p>
+      {events.map((ev) => (
+        <Suspense key={ev.id} fallback={<p>Loading {ev.name}...</p>}>
+          <CoachResults ev={ev} />
+        </Suspense>
+      ))}
+    </section>
+  );
+}
+
+async function CoachResults({ ev }: { ev: EventView }) {
+  const session = await requireRole("coach");
+  const [rows, checked, results, entries] = await Promise.all([startList(ev.id), checkedInIds(ev.id), resultsFor(ev.id), coachEntriesFor(ev.id)]);
+  const byId = new Map(results.map((r) => [resultId(r.eventId, r.race, r.athleteId), r]));
+  const entered = new Map(entries.map((e) => [resultId(ev.id, e.race, e.athleteId), e]));
+  const athletes = rows.filter((r) => checked.has(r.athleteId));
+  return (
+    <article className="space-y-3 rounded-lg border p-4" aria-label={`Results for ${ev.name}`}>
+      <h3 className="text-lg font-semibold">{ev.name}</h3>
+      {athletes.length === 0 ? <p className="text-muted-foreground">No athlete has checked in yet.</p> : null}
+      <ul className="space-y-4">
+        {athletes.flatMap((a) =>
+          a.events.map((race) => {
+            const key = resultId(ev.id, race, a.athleteId);
+            const result = byId.get(key);
+            const mine = entered.get(key);
+            return (
+              <li key={key} className="space-y-1 border-b pb-3">
+                <p className="font-medium">
+                  {a.fullName} - {a.sportClass} {race}
+                </p>
+                {result ? (
+                  <ResultStatus r={result} />
+                ) : mine ? (
+                  <p className="text-sm text-muted-foreground">
+                    {mine.createdBy === session.uid ? `You entered ${formatTime(mine.hundredths)}.` : "Another coach entered the time."} Waiting for the athlete.
+                  </p>
+                ) : (
+                  <ResultForm eventId={ev.id} race={race} athleteId={a.athleteId} label={`${a.fullName}'s ${race} time`} />
+                )}
+              </li>
+            );
+          }),
+        )}
+      </ul>
+    </article>
   );
 }
