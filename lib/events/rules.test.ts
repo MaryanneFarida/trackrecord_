@@ -94,6 +94,10 @@ describe("signed payloads", () => {
     expect(objectionPayload.safeParse(ok).success).toBe(true);
     expect(objectionPayload.safeParse({ ...ok, remove: true }).success).toBe(false);
   });
+  it("a qualifier can offer all 8 races", () => {
+    const p = { action: "event.create", name: "Nakuru", venue: "Afraha", raceStart, races: ["100m", "200m", "400m", "800m", "1500m", "5000m", "10000m", "Marathon"], classes: ["T12"], at: raceStart };
+    expect(eventCreatePayload.safeParse(p).success).toBe(true);
+  });
   it("never transform values (the server must hash exactly what was signed)", () => {
     const p = { action: "event.create", name: "  Nakuru  ", venue: "Afraha", raceStart, races: ["100m"], classes: ["T12"], at: raceStart };
     expect(eventCreatePayload.parse(p)).toEqual(p);

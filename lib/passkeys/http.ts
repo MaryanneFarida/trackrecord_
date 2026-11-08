@@ -5,6 +5,12 @@ import { getSession, type Session } from "@/lib/auth/session";
 import { CHALLENGE_COOKIE, CHALLENGE_TTL_SECONDS, openChallenge, sealChallenge, type ChallengeState, type Purpose } from "./challenge";
 import { relyingPartyFrom, type RelyingParty } from "./rp";
 
+/**
+ * The challenge cookie must reach every route that checks a signature
+ * (/api/admin/..., /api/registrations, /api/objections...), not just /api/passkeys.
+ */
+const CHALLENGE_PATH = "/api";
+
 export const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 /** Every passkey route starts here: same-site request, signed-in user. */
@@ -21,7 +27,7 @@ export async function saveChallenge(state: ChallengeState) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/api/passkeys",
+    path: CHALLENGE_PATH,
     maxAge: CHALLENGE_TTL_SECONDS,
   });
 }
@@ -30,7 +36,7 @@ export async function saveChallenge(state: ChallengeState) {
 export async function takeChallenge(uid: string, purpose: Purpose): Promise<ChallengeState | null> {
   const jar = await cookies();
   const state = openChallenge(jar.get(CHALLENGE_COOKIE)?.value, serverEnv().FILE_ENCRYPTION_KEY, { uid, purpose }, nowSeconds());
-  jar.delete({ name: CHALLENGE_COOKIE, path: "/api/passkeys" });
+  jar.delete({ name: CHALLENGE_COOKIE, path: CHALLENGE_PATH });
   return state;
 }
 

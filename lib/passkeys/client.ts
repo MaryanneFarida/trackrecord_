@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { startAuthentication, startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser";
 
@@ -23,8 +23,12 @@ export function explain(err: unknown): string {
     bad_signature: "The signature didn't check out. Nothing was approved.",
     unknown_passkey: "That passkey isn't registered to your account.",
     no_passkey: "You don't have a passkey yet.",
+    signed_out: "You've been signed out. Sign in again.",
+    forbidden: "Your account doesn't have permission for this.",
+    bad_origin: "This request came from the wrong address. Open TrackRecord directly and try again.",
   };
-  return messages[code] ?? "Something went wrong. Please try again.";
+  // Unknown errors show their code, so a problem can be pinned down from a screenshot.
+  return messages[code] ?? `Something went wrong (code: ${code || (err instanceof Error ? err.name : "unknown")}). Please try again.`;
 }
 
 export function passkeysSupported() {
