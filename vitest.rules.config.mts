@@ -1,6 +1,14 @@
-﻿import { defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
+import path from "node:path";
 
-// Security Rules tests need the Firestore emulator: run them with  npm run test:rules
+// Tests that need the Firestore emulator (Security Rules + ledger). Run with:  npm run test:rules
 export default defineConfig({
-  test: { environment: "node", include: ["tests/rules/**/*.test.ts"], testTimeout: 20_000, hookTimeout: 30_000, fileParallelism: false },
+  test: {
+    environment: "node",
+    include: ["tests/rules/**/*.test.ts", "tests/emulator/**/*.test.ts"],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    fileParallelism: false,
+  },
+  resolve: { alias: { "@": path.resolve(import.meta.dirname) } },
 });

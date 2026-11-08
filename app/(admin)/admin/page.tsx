@@ -1,4 +1,4 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { requireRole } from "@/lib/auth/session";
 import { adminDb } from "@/lib/firebase/admin";
 import { athletePhotos, listPendingAthletes } from "@/lib/athletes/admin";
@@ -6,6 +6,7 @@ import { SPORT_CLASSES } from "@/lib/athletes/schema";
 import { ROLE_LABELS, isRole } from "@/lib/auth/roles";
 import { ReviewActions } from "@/components/admin/review-actions";
 import { InviteForm } from "@/components/admin/invite-form";
+import { LedgerHealth } from "@/components/admin/ledger-health";
 
 export const metadata = { title: "Federation admin" };
 
@@ -25,6 +26,13 @@ async function Content() {
       <Suspense fallback={<p role="status">Loading applications...</p>}>
         <PendingAthletes />
       </Suspense>
+      <section aria-labelledby="ledger" className="space-y-4">
+        <h2 id="ledger" className="text-xl font-semibold">Ledger health</h2>
+        <p className="text-muted-foreground">
+          Every locked result, objection and removal is a signed, chained record. This re-checks all of them.
+        </p>
+        <LedgerHealth />
+      </section>
       <section aria-labelledby="invites" className="space-y-4">
         <h2 id="invites" className="text-xl font-semibold">Invite a coach, official, doctor or tribunal member</h2>
         <InviteForm />

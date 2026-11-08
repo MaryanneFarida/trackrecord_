@@ -1,7 +1,7 @@
-﻿import { defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 import path from "node:path";
 
 export default defineConfig({
-  test: { environment: "node", include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**", "tests/rules/**"] },
+  test: { environment: "node", include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**", "tests/rules/**", "tests/emulator/**"] },
   resolve: { alias: { "@": path.resolve(import.meta.dirname) } },
 });

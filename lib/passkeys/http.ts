@@ -1,7 +1,5 @@
-﻿import "server-only";
+import "server-only";
 import { cookies } from "next/headers";
-import { after } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
 import { serverEnv } from "@/lib/env";
 import { getSession, type Session } from "@/lib/auth/session";
 import { CHALLENGE_COOKIE, CHALLENGE_TTL_SECONDS, openChallenge, sealChallenge, type ChallengeState, type Purpose } from "./challenge";
@@ -36,12 +34,5 @@ export async function takeChallenge(uid: string, purpose: Purpose): Promise<Chal
   return state;
 }
 
-/** Audit entry, written after the response so it never slows the user down. */
-export function audit(action: string, uid: string, details: Record<string, unknown> = {}) {
-  after(async () => {
-    await adminDb()
-      .collection("auditLog")
-      .add({ action, uid, ...details, at: new Date().toISOString() })
-      .catch((err) => console.error("audit not saved", err));
-  });
-}
+/** Kept for existing imports; the audit helper now lives in lib/audit.ts. */
+export { audit } from "@/lib/audit";

@@ -80,6 +80,9 @@ service cloud.firestore {
     match /ledgerHead/{docId} {
       allow read: if true;
     }
+    match /ledgerDays/{day} {
+      allow read: if true; // daily Merkle roots, so anyone can check a record was included
+    }
     match /selectionRules/{season} {
       allow read: if true;
     }
