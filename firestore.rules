@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Phase 0: deny everything. Phase 2 opens exactly what each role needs,
+// keeps permanent collections create-only, and adds rules tests.
+// Remember: server routes use the Admin SDK, which skips these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
