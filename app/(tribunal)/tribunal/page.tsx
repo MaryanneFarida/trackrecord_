@@ -7,6 +7,8 @@ import { categoryLabel, formatEAT } from "@/lib/events/rules";
 import { canReview, groundLabel } from "@/lib/selection/rules";
 import { REMOVALS, athleteNames, type Removal } from "@/lib/selection/server";
 import { RESULTS, type ResultDoc } from "@/lib/results/server";
+import { Hero, JumpLinks, Stat, Stats } from "@/components/dash/parts";
+import { firstName } from "@/lib/auth/display-name";
 import { DecideResult, ReviewRemoval } from "@/components/selection/actions";
 
 export const metadata = { title: "Tribunal" };
@@ -20,16 +22,22 @@ export default function Page() {
 }
 
 async function Content() {
-  await requireRole("tribunal"); // every role page checks for itself, not just the layout
+  const session = await requireRole("tribunal"); // every role page checks for itself, not just the layout
+  const name = await firstName(session.uid, "tribunal");
   return (
-    <div className="space-y-10">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Independent review</h1>
-        <p className="text-muted-foreground">
-          You are independent of the coaches and the federation. Nobody can be removed from a final list without your
-          signature, and contested results wait for your decision. Every decision you sign is public, with your reason.
-        </p>
-      </div>
+    <div className="tr-dash space-y-6">
+      <Hero
+        image="hero-tribunal"
+        art="medal"
+        eyebrow="Independent reviewer"
+        title={name ? `Welcome, ${name}` : "Independent review"}
+        subtitle="You are independent of coaches and the federation. Nobody leaves a final list without your signature, and contested results wait for your decision."
+      >
+        <JumpLinks links={[{ href: "#rm", label: "Removals" }, { href: "#ct", label: "Contested results" }, { href: "#ob", label: "Objections" }]} />
+      </Hero>
+      <Suspense fallback={<p role="status">Loading...</p>}>
+        <TribunalStats />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading removals...</p>}>
         <Removals />
       </Suspense>
@@ -126,5 +134,23 @@ async function Objections() {
         ))}
       </ul>
     </section>
+  );
+}
+
+async function TribunalStats() {
+  await requireRole("tribunal");
+  const db = adminDb();
+  const [rm, ct, ob] = await Promise.all([
+    db.collection(REMOVALS).where("status", "==", "proposed").get(),
+    db.collection(RESULTS).where("status", "==", "contested").get(),
+    db.collection("objections").get(),
+  ]);
+  return (
+    <Stats>
+      <Stat tone="feature" label="Removals to review" value={rm.size} hint="Nobody leaves without you" />
+      <Stat tone="peach" label="Contested results" value={ct.size} hint="Waiting for your decision" />
+      <Stat tone="sage" label="Objections on record" value={ob.size} hint="Watch for patterns" />
+      <Stat tone="plain" label="Your decisions" value="Public" hint="Signed, with your reason" />
+    </Stats>
   );
 }

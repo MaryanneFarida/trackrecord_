@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1200" preserveAspectRatio="xMidYMid meet">
+<!-- An athletics stadium seen from above: six lanes, lane numbers, finish line and the infield pitch. -->
+<rect width="1000" height="1200" fill="#fbece0"/>
+<rect x="104" y="44" width="792" height="1112" rx="396.0" fill="#e4eadb"/>
+<rect x="130" y="70" width="740" height="1060" rx="370.0" fill="#c0582f"/>
+<rect x="160" y="100" width="680" height="1000" rx="340.0" fill="none" stroke="#fffdf8" stroke-width="3"/>
+<rect x="190" y="130" width="620" height="940" rx="310.0" fill="none" stroke="#fffdf8" stroke-width="3"/>
+<rect x="220" y="160" width="560" height="880" rx="280.0" fill="none" stroke="#fffdf8" stroke-width="3"/>
+<rect x="250" y="190" width="500" height="820" rx="250.0" fill="none" stroke="#fffdf8" stroke-width="3"/>
+<rect x="280" y="220" width="440" height="760" rx="220.0" fill="none" stroke="#fffdf8" stroke-width="3"/>
+<rect x="310" y="250" width="380" height="700" rx="190.0" fill="#1f4d3a"/>
+<g fill="none" stroke="#f7f3ea" stroke-width="4" opacity="0.85"><rect x="350" y="380.0" width="300" height="440.0"/><line x1="350" y1="600.0" x2="650" y2="600.0"/><circle cx="500.0" cy="600.0" r="62"/><rect x="410.0" y="380.0" width="180" height="90"/><rect x="410.0" y="730.0" width="180" height="90"/></g>
+<rect x="690" y="720.0" width="180" height="24" fill="#fffdf8"/><g fill="#23251f"><rect x="690" y="720.0" width="15" height="12"/><rect x="705" y="732.0" width="15" height="12"/><rect x="720" y="720.0" width="15" height="12"/><rect x="735" y="732.0" width="15" height="12"/><rect x="750" y="720.0" width="15" height="12"/><rect x="765" y="732.0" width="15" height="12"/><rect x="780" y="720.0" width="15" height="12"/><rect x="795" y="732.0" width="15" height="12"/><rect x="810" y="720.0" width="15" height="12"/><rect x="825" y="732.0" width="15" height="12"/><rect x="840" y="720.0" width="15" height="12"/><rect x="855" y="732.0" width="15" height="12"/></g>
+<text x="705.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">1</text>
+<text x="735.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">2</text>
+<text x="765.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">3</text>
+<text x="795.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">4</text>
+<text x="825.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">5</text>
+<text x="855.0" y="790.0" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="middle">6</text>
+</svg>

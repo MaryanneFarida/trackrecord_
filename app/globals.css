@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -9,7 +9,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-sage-foreground: var(--sage-foreground);
+  --color-peach: var(--peach);
+  --color-peach-soft: var(--peach-soft);
+  --color-olive: var(--olive);
+  --color-espresso: var(--espresso);
+  --color-sand: var(--sand);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,39 +56,52 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * TrackRecord design tokens. One brand colour (forest), one accent (terracotta),
+ * soft supporting tones (sage, peach, olive) on warm ivory. Charcoal text.
+ * All text/background pairs used in the app meet WCAG AA contrast.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f7f3ea; /* ivory */
+  --foreground: #23251f; /* charcoal */
+  --card: #fffdf8;
+  --card-foreground: #23251f;
+  --popover: #fffdf8;
+  --popover-foreground: #23251f;
+  --primary: #1f4d3a; /* forest: brand, navigation, main actions */
+  --primary-foreground: #f7f3ea;
+  --secondary: #e4eadb; /* soft sage */
+  --secondary-foreground: #1f4d3a;
+  --muted: #efe9dc;
+  --muted-foreground: #5c6056;
+  --accent: #c0582f; /* terracotta: highlights, selected states */
+  --accent-foreground: #fffdf8;
+  --destructive: #a3321f;
+  --border: #e3dccb;
+  --input: #d6cdb8;
+  --ring: #1f4d3a;
+  --sage: #8fa384;
+  --sage-soft: #e4eadb;
+  --sage-foreground: #1f2a1c;
+  --peach: #f4d9c4;
+  --peach-soft: #fbece0;
+  --olive: #6b6a3a;
+  --espresso: #23251f;
+  --sand: #efe9dc;
+  --chart-1: #1f4d3a;
+  --chart-2: #c0582f;
+  --chart-3: #8fa384;
+  --chart-4: #6b6a3a;
+  --chart-5: #f4d9c4;
+  --radius: 0.875rem;
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #23251f;
+  --sidebar-primary: #1f4d3a;
+  --sidebar-primary-foreground: #f7f3ea;
+  --sidebar-accent: #e4eadb;
+  --sidebar-accent-foreground: #1f4d3a;
+  --sidebar-border: #e3dccb;
+  --sidebar-ring: #1f4d3a;
 }
 
 .dark {
@@ -126,5 +147,93 @@
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display), Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+  /* Bigger, easier targets for athletes with limited hand control. */
+  input[type="checkbox"], input[type="radio"] {
+    accent-color: var(--primary);
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Dashboard sections: one calm card style, used everywhere. */
+  .tr-dash > section:not(.tr-hero) {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgb(35 37 31 / 0.04);
+  }
+  @media (min-width: 768px) {
+    .tr-dash > section:not(.tr-hero) {
+      padding: 2rem;
+    }
+  }
+  .tr-dash > section h2 {
+    font-size: 1.6rem;
+    line-height: 1.2;
+    color: var(--foreground);
+  }
+  .tr-dash article {
+    border-radius: 1rem;
+    background: var(--background);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .tr-dash article:hover {
+    border-color: var(--sage);
+  }
+  /* Photo frames: consistent crop and corners. */
+  .tr-photo {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background: var(--peach-soft);
+  }
+  .tr-photo > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Thin running-track lanes, used sparingly as a sporting motif. */
+  .tr-lanes {
+    background-image: repeating-linear-gradient(180deg, transparent 0 22px, rgb(31 77 58 / 0.08) 22px 23px);
+  }
+  .tr-ticker {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .tr-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    background: var(--sage-soft);
+    color: var(--primary);
+    padding: 0.3rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .tr-num {
+    font-family: var(--font-display), Georgia, serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.02em;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tr-rise {
+      animation: tr-rise 0.5s ease both;
+    }
+  }
+  @keyframes tr-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
   }
 }

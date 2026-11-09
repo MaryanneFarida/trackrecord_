@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 /** World Para Athletics classes for track running. */
 export const SPORT_CLASSES = [
@@ -28,9 +28,17 @@ export const SPORT_CLASSES = [
   { code: "T64", label: "T64 - single below-knee, prosthesis" },
 ] as const;
 
+/**
+ * TrackRecord's first version is built for athletes with PHYSICAL impairments
+ * (coordination, short stature, limb differences, wheelchair racing, prostheses).
+ * Visual and intellectual impairment classes are kept for existing records, but
+ * new athletes and qualifiers can't use them until the voice-first version exists.
+ */
+const NOT_YET = ["T11", "T12", "T13", "T20"];
+export const OFFERED_CLASSES = SPORT_CLASSES.filter((c) => !NOT_YET.includes(c.code));
+
 export const EVENTS = ["100m", "200m", "400m", "800m", "1500m", "5000m", "10000m", "Marathon"] as const;
 
-const classCodes = SPORT_CLASSES.map((c) => c.code) as [string, ...string[]];
 
 /** Images arrive as JPEG data URLs, already shrunk in the browser. */
 const jpegDataUrl = z
@@ -42,7 +50,7 @@ export const applicationSchema = z
   .object({
     fullName: z.string().trim().min(3).max(80),
     licenceNo: z.string().trim().min(3).max(30).regex(/^[A-Za-z0-9/-]+$/, "Letters, numbers, / and - only"),
-    sportClass: z.enum(classCodes),
+    sportClass: z.enum(OFFERED_CLASSES.map((c) => c.code) as [string, ...string[]]),
     events: z.array(z.enum(EVENTS)).min(1).max(4),
     guideRunner: z.boolean(),
     consent: z.literal(true),

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signedPost } from "@/lib/passkeys/signed";
-import { EVENTS, SPORT_CLASSES } from "@/lib/athletes/schema";
+import { EVENTS, OFFERED_CLASSES as SPORT_CLASSES } from "@/lib/athletes/schema";
 import { explainAction } from "./explain";
 
 /** Admin: create a qualifier. The start list will seal itself 24 hours before the race. */

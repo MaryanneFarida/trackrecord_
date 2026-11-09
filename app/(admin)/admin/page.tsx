@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/privacy";
 import { Suspense } from "react";
 import { requireRole } from "@/lib/auth/session";
 import { adminDb } from "@/lib/firebase/admin";
@@ -17,6 +18,8 @@ import { PublishSelectionForm } from "@/components/selection/publish-form";
 import { GenerateButton, ProposeRemoval } from "@/components/selection/actions";
 import { readiness } from "@/lib/selection/rules";
 import { athleteNames, listSelections, qualifierStates, type Selection } from "@/lib/selection/server";
+import { Hero, JumpLinks, Stat, Stats } from "@/components/dash/parts";
+import { firstName } from "@/lib/auth/display-name";
 import { formatTime } from "@/lib/schemas";
 
 export const metadata = { title: "Federation admin" };
@@ -30,10 +33,30 @@ export default function Page() {
 }
 
 async function Content() {
-  await requireRole("admin"); // every role page checks for itself, not just the layout
+  const session = await requireRole("admin"); // every role page checks for itself, not just the layout
+  const name = await firstName(session.uid, "admin");
   return (
-    <div className="space-y-10">
-      <h1 className="text-2xl font-semibold">Federation admin area</h1>
+    <div className="tr-dash space-y-6">
+      <Hero
+        image="hero-admin"
+        art="finish"
+        eyebrow="Admin"
+        title={name ? `Welcome back, ${name}` : "Welcome back"}
+        subtitle="You set the stage: verify athletes, create qualifiers and publish the rules. The rules then decide, and every step is on the public record."
+      >
+        <JumpLinks
+          links={[
+            { href: "#pending", label: "Applications" },
+            { href: "#events", label: "Qualifiers" },
+            { href: "#selection", label: "Selection" },
+            { href: "#invites", label: "Invites" },
+            { href: "#ledger", label: "Ledger health" },
+          ]}
+        />
+      </Hero>
+      <Suspense fallback={<p role="status">Loading your numbers...</p>}>
+        <AdminStats />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading applications...</p>}>
         <PendingAthletes />
       </Suspense>
@@ -100,7 +123,7 @@ async function ReviewCard({ athlete: a }: { athlete: Awaited<ReturnType<typeof l
       <div>
         <h3 className="text-lg font-semibold">{a.fullName}</h3>
         <p className="text-sm text-muted-foreground">
-          {a.email} - licence {a.licenceNo} - {cls} - {a.events.join(", ")}
+          Licence {a.licenceNo} - {cls} - {a.events.join(", ")}
           {a.guideRunner ? " - races with a guide" : ""} - applied {a.submittedAt.slice(0, 10)}
         </p>
       </div>
@@ -138,7 +161,7 @@ async function RecentInvites() {
         return (
           <li key={d.id} className="p-3 text-sm">
             <strong>{isRole(v.role) ? ROLE_LABELS[v.role] : v.role}</strong>
-            {v.email ? ` for ${v.email}` : " (any email)"}
+            {v.email ? ` for ${maskEmail(v.email)}` : " (any email)"}
             {v.note ? ` - ${v.note}` : ""} - {status}
           </li>
         );
@@ -230,5 +253,23 @@ async function AdminSelection({ sel }: { sel: Selection }) {
         </div>
       )}
     </article>
+  );
+}
+
+async function AdminStats() {
+  await requireRole("admin");
+  const [pending, events, selections, ledger] = await Promise.all([
+    listPendingAthletes(),
+    listEvents(),
+    listSelections(),
+    adminDb().doc("ledgerHead/head").get(),
+  ]);
+  return (
+    <Stats>
+      <Stat tone="feature" label="Applications waiting" value={pending.length} hint="Athletes to verify" />
+      <Stat tone="peach" label="Qualifiers" value={events.length} hint={`${events.filter((e) => e.registrationOpen).length} open for registration`} />
+      <Stat tone="sage" label="Selections" value={selections.length} hint={`${selections.filter((s) => s.finalList).length} final list(s) generated`} />
+      <Stat tone="plain" label="Public records" value={(ledger.get("seq") as number | undefined) ?? 0} hint="In the tamper-evident ledger" />
+    </Stats>
   );
 }
