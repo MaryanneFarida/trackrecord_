@@ -105,8 +105,14 @@ async function AthleteEvent({ ev, uid, profile }: { ev: EventView; uid: string; 
     body = (
       <div className="rounded-md bg-muted p-3 text-sm">
         <p className="font-medium">You are on this start list for {(entry.get("events") as string[]).join(", ")}.</p>
-        <p>Registered {formatEAT(entry.get("registeredAt"))}. Your signed registration fingerprint: <code className="break-all">{String(entry.get("signedHash")).slice(0, 16)}...</code></p>
-        {ev.sealedAt ? <p>Sealed in public ledger record #{ev.sealedSeq}.</p> : <p>It will be sealed at {formatEAT(ev.lockTime)}. Check-in opens then.</p>}
+        <p className="flex flex-wrap items-center gap-2">
+          <VerifiedSeal label="Signed with your passkey" /> <span>Registered {formatEAT(entry.get("registeredAt"))}.</span>
+        </p>
+        {ev.sealedAt ? <p>The list is sealed (public record #{ev.sealedSeq}). Nobody can change it silently.</p> : <p>The list seals at {formatEAT(ev.lockTime)}. Check-in opens then.</p>}
+        <details className="text-xs text-muted-foreground">
+          <summary className="min-h-11 cursor-pointer content-center">Proof (for experts)</summary>
+          <p className="break-all">Fingerprint of your signed registration: <code>{String(entry.get("signedHash"))}</code></p>
+        </details>
         {checkedIn ? <MyResults ev={ev} uid={uid} races={entry.get("events") as string[]} /> : null}
         {ev.checkInOpen ? (
           <div className="mt-3">

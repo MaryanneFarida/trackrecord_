@@ -67,11 +67,14 @@ export default function Home() {
             <Photo name="feature-checkin" art="finish" alt="An official checking an athlete in at the venue" className="aspect-[16/10]" />
             <div className="flex flex-col justify-center gap-4 rounded-[1.5rem] bg-primary p-8 text-primary-foreground">
               <span className="self-start"><VerifiedSeal tone="light" label="Public proof" /></span>
-              <h2 className="text-3xl font-semibold">Got a TrackRecord certificate?</h2>
-              <p className="opacity-85">Selectors, sponsors, journalists and the tribunal can check any record. No account needed.</p>
+              <h2 className="text-3xl font-semibold">Check a TrackRecord certificate</h2>
+              <p className="opacity-85">
+                When an athlete and their coach sign the same time, it locks and becomes a certificate with a public record number.
+                Selectors, sponsors, journalists and the tribunal can check it here. No account needed.
+              </p>
               <form action="/verify" className="flex gap-2">
                 <label htmlFor="rec" className="sr-only">Record number</label>
-                <input id="rec" name="n" inputMode="numeric" placeholder="Record number" className="h-12 w-full rounded-full border-0 bg-card px-5 text-base text-foreground md:w-56" />
+                <input id="rec" name="n" inputMode="numeric" placeholder="Record number, e.g. 12" className="h-12 w-full rounded-full border-0 bg-card px-5 text-base text-foreground md:w-56" />
                 <button className="h-12 shrink-0 rounded-full bg-accent px-6 font-semibold text-accent-foreground transition-opacity hover:opacity-90">Check</button>
               </form>
             </div>
