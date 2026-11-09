@@ -14,6 +14,8 @@ const schema = z.object({
   // Resend's test sender only delivers to your own Resend account email. Verify a domain to email everyone.
   // How long an athlete has to answer a proposed removal. 4320 = 72 hours. A smaller number is DEMO MODE and is shown on screen.
   REMOVAL_RESPONSE_MINUTES: z.coerce.number().int().min(1).max(10080).default(4320),
+  // Opens /judges, the sign-in door to the five demo accounts. Unset = the door is closed.
+  JUDGE_ACCESS_CODE: z.string().min(12).optional(),
   RESEND_FROM: z.string().default("TrackRecord <onboarding@resend.dev>"),
 });
 
