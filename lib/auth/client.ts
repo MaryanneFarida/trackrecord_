@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   GoogleAuthProvider,
@@ -6,6 +6,7 @@ import {
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   setPersistence,
+  signInWithCustomToken,
   signInWithEmailLink,
   signInWithPopup,
   signOut,
@@ -59,6 +60,20 @@ export async function finishEmailLink(email: string, href: string): Promise<stri
 export async function signInWithGoogle(): Promise<string> {
   const auth = await prepare();
   const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+  return startSession(cred.user);
+}
+
+/** Judges: the access code buys a one-time token for one demo account. */
+export async function signInAsJudge(code: string, role: string): Promise<string> {
+  const res = await fetch("/api/judge-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, role }) });
+  const data = (await res.json().catch(() => ({}))) as { token?: string; error?: string };
+  if (!res.ok || !data.token) {
+    throw new Error(
+      data.error === "wrong_code" ? "That access code isn't right." : data.error === "closed" ? "Judge access is closed." : data.error === "not_set_up" ? "The demo accounts aren't set up yet." : "Could not sign in. Please try again.",
+    );
+  }
+  const auth = await prepare();
+  const cred = await signInWithCustomToken(auth, data.token);
   return startSession(cred.user);
 }
 
