@@ -19,7 +19,7 @@ export function Hero(props: {
   return (
     <section className="tr-hero tr-rise grid overflow-hidden rounded-[1.75rem] border bg-card md:grid-cols-[1.15fr_0.85fr]" aria-labelledby="hero-title">
       <div className="tr-lanes flex flex-col justify-center gap-4 p-6 md:p-10">
-        <p className="tr-eyebrow">{props.eyebrow}</p>
+        <p className="tr-eyebrow self-start">{props.eyebrow}</p>
         <div className="flex items-center gap-4">
           {props.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
