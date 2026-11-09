@@ -92,7 +92,7 @@ async function Cta() {
     return (
       <div className="flex flex-wrap gap-3">
         <Link href="/login" className="inline-flex h-14 items-center rounded-full bg-primary px-7 text-lg font-semibold text-primary-foreground transition-opacity hover:opacity-90">Get started</Link>
-        <a href="#how" className="inline-flex h-14 items-center rounded-full border-2 border-primary px-7 text-lg font-semibold text-primary transition-colors hover:bg-secondary">How it works</a>
+        <Link href="/selection" className="inline-flex h-14 items-center rounded-full border-2 border-primary px-7 text-lg font-semibold text-primary transition-colors hover:bg-secondary">See the final lists</Link>
       </div>
     );
   }
