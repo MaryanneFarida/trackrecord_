@@ -25,10 +25,13 @@ async function Guard({ role, children }: { role: Role; children: ReactNode }) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
-        <nav aria-label="Main" className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-2">
+        <nav aria-label="Main" className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2">
           <Brand />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-1">
             <span className="hidden rounded-full bg-secondary px-3 py-1.5 text-sm font-semibold text-primary sm:inline">{ROLE_LABELS[role]}</span>
+            <Link href="/selection" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium hover:bg-muted">
+              Final lists
+            </Link>
             <Link href="/account/passkeys" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium hover:bg-muted">
               Passkeys
             </Link>
