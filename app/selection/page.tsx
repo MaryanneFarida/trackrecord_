@@ -6,6 +6,8 @@ import { formatEAT } from "@/lib/events/rules";
 import { listSelections } from "@/lib/selection/server";
 
 export const metadata = { title: "Final lists" };
+// Always read the live list: never a copy frozen when the site was built.
+export const dynamic = "force-dynamic";
 
 /** Public, no sign-in: every team selection, its rules, and its final list once generated. */
 export default function SelectionsIndex() {
