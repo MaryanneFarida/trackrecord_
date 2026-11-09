@@ -94,7 +94,7 @@ service cloud.firestore {
       allow read: if true;
     }
     match /removals/{removalId} {
-      allow read: if true; // the fact, the reason category and a hash only
+      allow read: if true; // public by design: reason category, evidence reference, explanation, the athlete's response, the review
     }
     match /medicalReports/{reportId} {
       allow read, write: if false; // encrypted: released only to the athlete and tribunal via the server

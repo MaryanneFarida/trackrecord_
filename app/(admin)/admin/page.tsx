@@ -11,6 +11,13 @@ import { EventForm } from "@/components/events/event-form";
 import { EventSummary } from "@/components/events/event-summary";
 import { StartListTable } from "@/components/events/start-list-table";
 import { listEvents, listIntact, startList, type EventView } from "@/lib/events/server";
+import Link from "next/link";
+import { formatEAT } from "@/lib/events/rules";
+import { PublishSelectionForm } from "@/components/selection/publish-form";
+import { GenerateButton, ProposeRemoval } from "@/components/selection/actions";
+import { readiness } from "@/lib/selection/rules";
+import { athleteNames, listSelections, qualifierStates, type Selection } from "@/lib/selection/server";
+import { formatTime } from "@/lib/schemas";
 
 export const metadata = { title: "Federation admin" };
 
@@ -38,6 +45,16 @@ async function Content() {
         <EventForm />
         <Suspense fallback={<p role="status">Loading qualifiers...</p>}>
           <Events />
+        </Suspense>
+      </section>
+      <section aria-labelledby="selection" className="space-y-4">
+        <h2 id="selection" className="text-xl font-semibold">Selection</h2>
+        <p className="text-muted-foreground">
+          Publish the rules before results count. The final list is generated from them; you can only PROPOSE a removal,
+          and an independent tribunal member decides.
+        </p>
+        <Suspense fallback={<p role="status">Loading selections...</p>}>
+          <Selections />
         </Suspense>
       </section>
       <section aria-labelledby="ledger" className="space-y-4">
@@ -155,6 +172,63 @@ async function AdminEvent({ ev }: { ev: EventView }) {
         <summary className="min-h-11 cursor-pointer content-center">Start list ({rows.length})</summary>
         <StartListTable rows={rows} caption={`Start list for ${ev.name}`} />
       </details>
+    </article>
+  );
+}
+
+async function Selections() {
+  await requireRole("admin");
+  const [events, selections] = await Promise.all([listEvents(), listSelections()]);
+  return (
+    <div className="space-y-4">
+      <details className="rounded-lg border p-4">
+        <summary className="min-h-11 cursor-pointer content-center font-medium">Publish new selection rules</summary>
+        <div className="mt-3">
+          <PublishSelectionForm qualifiers={events.map((e) => ({ id: e.id, name: e.name, when: formatEAT(e.raceStart) }))} />
+        </div>
+      </details>
+      {selections.map((sel) => (
+        <Suspense key={sel.id} fallback={<p>Loading {sel.name}...</p>}>
+          <AdminSelection sel={sel} />
+        </Suspense>
+      ))}
+    </div>
+  );
+}
+
+async function AdminSelection({ sel }: { sel: Selection }) {
+  await requireRole("admin");
+  const states = sel.finalList ? [] : await qualifierStates(sel.qualifierIds);
+  const names = sel.finalList ? await athleteNames(sel.finalList.flatMap((q) => q.ranking.map((r) => r.athleteId))) : new Map<string, string>();
+  return (
+    <article className="space-y-3 rounded-lg border p-4" aria-label={sel.name}>
+      <h3 className="text-lg font-semibold">{sel.name}</h3>
+      <p className="text-sm">
+        {sel.quotas.map((q) => `${q.sportClass} ${q.race} (${q.places})`).join(", ")} - rules record #{sel.ledgerSeq} -{" "}
+        <Link href={`/selection/${sel.id}`} className="underline underline-offset-2">public page</Link>
+      </p>
+      {!sel.finalList ? (
+        <GenerateButton selectionId={sel.id} blockers={readiness(states).blockers} />
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm">Final list version {sel.finalVersion}, record #{sel.finalListSeq}.</p>
+          {sel.finalList.map((q) => (
+            <div key={`${q.sportClass}-${q.race}`} className="space-y-2">
+              <p className="font-medium">{q.sportClass} {q.race}</p>
+              <ul className="space-y-2">
+                {q.ranking.map((r) => (
+                  <li key={r.athleteId} className="space-y-1 rounded-md border p-2">
+                    <p>
+                      #{r.rank} {names.get(r.athleteId) ?? "Athlete"} - {formatTime(r.best)} - {r.status}
+                    </p>
+                    <ProposeRemoval selectionId={sel.id} athleteId={r.athleteId} athleteName={names.get(r.athleteId) ?? "the athlete"} sportClass={q.sportClass} race={q.race} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </article>
   );
 }
