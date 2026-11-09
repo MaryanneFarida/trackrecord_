@@ -97,7 +97,7 @@ export function EventForm() {
           {classes.length === SPORT_CLASSES.length ? "Clear all classes" : "Select all classes"}
         </Button>
       </fieldset>
-      <Button type="submit" className="h-11 px-5 text-base" disabled={busy}>Create qualifier</Button>
+      <Button type="submit" className="min-h-11 px-5 text-base" disabled={busy}>Create qualifier</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );

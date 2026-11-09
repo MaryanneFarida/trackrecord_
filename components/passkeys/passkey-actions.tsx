@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -55,11 +55,11 @@ export function PasskeyActions({ hasPasskey, next }: { hasPasskey: boolean; next
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
-        <Button className="h-11 px-5 text-base" onClick={add} disabled={busy}>
+        <Button className="min-h-11 px-5 text-base" onClick={add} disabled={busy}>
           {hasPasskey ? "Add a passkey on this device" : "Create my passkey"}
         </Button>
         {hasPasskey ? (
-          <Button variant="outline" className="h-11 px-5 text-base" onClick={test} disabled={busy}>
+          <Button variant="outline" className="min-h-11 px-5 text-base" onClick={test} disabled={busy}>
             Test a signature
           </Button>
         ) : null}

@@ -137,7 +137,7 @@ async function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
       <>
         <div className="overflow-hidden rounded-[1.5rem] border bg-card">
           <div className="tr-lanes flex items-center justify-between gap-3 border-b bg-sage-soft px-6 py-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">TrackRecord certificate</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">TrackRecord certificate &middot; Record #{r.seq}</span>
             <VerifiedSeal label="Verified result" />
           </div>
           <div className="space-y-4 p-6 text-center md:p-10">

@@ -135,7 +135,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           Kenya&apos;s Data Protection Act 2019. Only the admin can view them; on race day the venue official sees your selfie to confirm it&apos;s you.
         </span>
       </label>
-      <Button type="submit" className="h-11 w-full text-base" disabled={busy}>
+      <Button type="submit" className="min-h-11 w-full text-base" disabled={busy}>
         {busy ? "Sending..." : "Send my application"}
       </Button>
       <p role="status" aria-live="polite" className="text-destructive">{message}</p>

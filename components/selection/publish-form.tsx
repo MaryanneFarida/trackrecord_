@@ -57,13 +57,13 @@ export function PublishSelectionForm({ qualifiers }: { qualifiers: { id: string;
             </select>
             <Input aria-label="Places" type="number" min={1} max={20} className="h-11 w-24" value={q.places} onChange={(e) => update(i, { places: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })} />
             <span className="pb-3 text-sm">places</span>
-            {quotas.length > 1 ? <Button type="button" variant="outline" className="h-11" onClick={() => setQuotas(quotas.filter((_, j) => j !== i))}>Remove</Button> : null}
+            {quotas.length > 1 ? <Button type="button" variant="outline" className="min-h-11" onClick={() => setQuotas(quotas.filter((_, j) => j !== i))}>Remove</Button> : null}
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={() => setQuotas([...quotas, { sportClass: "T12", race: "100m", places: 3 }])}>Add a class and race</Button>
       </fieldset>
       <p className="text-sm text-muted-foreground">Publish before any of these qualifiers has a locked result. Once published, nobody can change the rules.</p>
-      <Button type="submit" className="h-11 px-5 text-base" disabled={busy}>Sign and publish rules</Button>
+      <Button type="submit" className="min-h-11 px-5 text-base" disabled={busy}>Sign and publish rules</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );

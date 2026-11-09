@@ -52,7 +52,7 @@ export function RegisterForm({ eventId, eventName, races }: { eventId: string; e
           ))}
         </div>
       </fieldset>
-      <Button type="submit" className="h-11 px-5 text-base" disabled={busy}>Register for {eventName}</Button>
+      <Button type="submit" className="min-h-12 w-full px-5 text-base sm:w-auto" disabled={busy}>Register for {eventName}</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );
