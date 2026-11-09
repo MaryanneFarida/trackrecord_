@@ -17,6 +17,9 @@ import { statusId } from "@/lib/checkin/rules";
 import { formatTime } from "@/lib/schemas";
 import { journeysFor } from "@/lib/selection/journey";
 import { JourneyView } from "@/components/selection/journey";
+import { Hero, JumpLinks, Stat, Stats } from "@/components/dash/parts";
+import { VerifiedSeal } from "@/components/dash/verified";
+import { athletePhotos } from "@/lib/athletes/admin";
 
 export const metadata = { title: "Athlete" };
 
@@ -39,16 +42,23 @@ async function Content() {
   const session = await requireRole("athlete"); // every role page checks for itself, not just the layout
   const doc = await adminDb().collection("athletes").doc(session.uid).get();
   const profile = doc.exists ? (doc.data() as Profile) : null;
+  const photos = await athletePhotos(session.uid).catch(() => null);
+  const first = profile?.fullName.trim().split(/\s+/)[0];
   return (
-    <div className="space-y-10">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{profile ? `Hello, ${profile.fullName}` : "Athlete area"}</h1>
-        {profile ? (
-          <p className="text-muted-foreground">
-            Class {profile.sportClass} - races in your profile: {profile.events.join(", ")}
-          </p>
-        ) : null}
-      </div>
+    <div className="tr-dash space-y-6">
+      <Hero
+        image="hero-athlete"
+        eyebrow="Athlete profile"
+        badge={profile?.status === "verified" ? <VerifiedSeal label="Identity verified" /> : null}
+        title={first ? `Welcome back, ${first}` : "Welcome to TrackRecord"}
+        avatar={photos?.selfie ?? null}
+        subtitle={profile ? <>Class {profile.sportClass} &middot; {profile.events.join(", ")}</> : null}
+      >
+        <JumpLinks links={[{ href: "#journey", label: "My road" }, { href: "#qualifiers", label: "Qualifiers" }, { href: "#objections", label: "Objections" }]} />
+      </Hero>
+      <Suspense fallback={<p role="status">Loading your numbers...</p>}>
+        <AthleteStats uid={session.uid} />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading your road to selection...</p>}>
         <Journeys uid={session.uid} />
       </Suspense>
@@ -198,5 +208,39 @@ async function Journeys({ uid }: { uid: string }) {
         <JourneyView key={`${j.selection.id}-${j.sportClass}-${j.race}`} j={j} uid={uid} />
       ))}
     </section>
+  );
+}
+
+/** Four glanceable numbers at the top of the dashboard. */
+async function AthleteStats({ uid }: { uid: string }) {
+  await requireRole("athlete");
+  const db = adminDb();
+  const [events, results, journeys] = await Promise.all([
+    listEvents(),
+    db.collection(RESULTS).where("athleteId", "==", uid).get(),
+    journeysFor(uid),
+  ]);
+  const entries = await Promise.all(events.map((ev) => db.collection(startListPath(ev.id)).doc(uid).get()));
+  const mine = events.filter((_, i) => entries[i].exists);
+  const next = mine.filter((ev) => !ev.raceStarted).sort((a, b) => a.raceStart.localeCompare(b.raceStart))[0];
+  const times = results.docs
+    .map((d) => d.data() as ResultDoc)
+    .map((r) => (r.status === "locked" ? r.hundredths : r.status === "decided" ? (r.finalHundredths ?? null) : null))
+    .filter((t): t is number => t !== null);
+  const j = journeys[0];
+  const standing =
+    !j ? "-" : j.final.kind === "selected" ? "Selected" : j.final.kind === "reserve" ? `Reserve #${j.final.rank}` : j.final.kind === "removed" ? "Removed" : j.final.rank ? `#${j.final.rank}` : "-";
+  return (
+    <Stats>
+      <Stat tone="feature" label="Qualifiers entered" value={mine.length} hint={mine.length ? "Registered by you, signed" : "Register below"} />
+      <Stat tone="peach" label="Personal best" value={times.length ? formatTime(Math.min(...times)) : "-"} hint={times.length ? "Locked on the public record" : "No locked time yet"} />
+      <Stat tone="sage" label="Selection" value={standing} hint={j ? `${j.sportClass} ${j.race}` : "No selection yet"} />
+      <Stat
+        tone="plain"
+        label="Next race"
+        value={next ? new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", day: "numeric", month: "short" }).format(new Date(next.raceStart)) : "-"}
+        hint={next ? next.name : "Nothing coming up"}
+      />
+    </Stats>
   );
 }

@@ -1,3 +1,4 @@
+import { PublicHeader } from "@/components/public-header";
 import { Suspense } from "react";
 import Link from "next/link";
 import { formatTime } from "@/lib/schemas";
@@ -11,11 +12,14 @@ export const metadata = { title: "Final list" };
 /** Public, no sign-in: the rules, the live standings or the final list, and every removal with its reasons. */
 export default function Page({ params }: PageProps<"/selection/[selectionId]">) {
   return (
-    <section className="mx-auto max-w-3xl space-y-8 px-4 py-8">
+    <>
+    <PublicHeader />
+    <section className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
       <Suspense fallback={<p role="status">Loading the list...</p>}>
         <ListView params={params} />
       </Suspense>
     </section>
+    </>
   );
 }
 

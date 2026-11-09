@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EVENTS, SPORT_CLASSES } from "@/lib/athletes/schema";
+import { EVENTS, OFFERED_CLASSES as SPORT_CLASSES } from "@/lib/athletes/schema";
 
 /** Shrinks a photo in the browser (max 1024 px, JPEG) so it uploads fast on mobile data. */
 async function shrink(file: File): Promise<string> {
@@ -61,7 +61,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
   const [licenceNo, setLicenceNo] = useState("");
   const [sportClass, setSportClass] = useState("");
   const [events, setEvents] = useState<string[]>([]);
-  const [guideRunner, setGuideRunner] = useState(false);
+  const guideRunner = false; // guide runners are for visual-impairment classes, which come later
   const [consent, setConsent] = useState(false);
   const [idPhoto, setIdPhoto] = useState("");
   const [selfie, setSelfie] = useState("");
@@ -126,17 +126,13 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           ))}
         </div>
       </fieldset>
-      <label className="flex min-h-11 items-center gap-2">
-        <input type="checkbox" className="size-5" checked={guideRunner} onChange={(e) => setGuideRunner(e.target.checked)} />
-        I race with a guide runner
-      </label>
       <PhotoField id="idPhoto" label="Photo of your national ID" hint="The side with your photo and name. Make sure it's readable." capture="environment" value={idPhoto} onChange={setIdPhoto} />
       <PhotoField id="selfie" label="A selfie" hint="Face the camera in good light. The admin compares it with your ID." capture="user" value={selfie} onChange={setSelfie} />
       <label className="flex items-start gap-2 rounded-md border p-3">
         <input type="checkbox" required className="mt-1 size-5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>
           I agree that TrackRecord stores my ID photo and selfie, encrypted, to verify my identity, as allowed under
-          Kenya&apos;s Data Protection Act 2019. Only the federation admin can view them.
+          Kenya&apos;s Data Protection Act 2019. Only the admin can view them; on race day the venue official sees your selfie to confirm it&apos;s you.
         </span>
       </label>
       <Button type="submit" className="h-11 w-full text-base" disabled={busy}>

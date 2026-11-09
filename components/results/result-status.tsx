@@ -1,3 +1,4 @@
+import { VerifiedSeal } from "@/components/dash/verified";
 import Link from "next/link";
 import { formatTime } from "@/lib/schemas";
 import type { ResultDoc } from "@/lib/results/server";
@@ -7,7 +8,7 @@ export function ResultStatus({ r }: { r: ResultDoc }) {
   if (r.status === "locked") {
     return (
       <p className="text-sm">
-        <span className="rounded-full bg-muted px-2 py-0.5 font-medium">Locked</span> <strong className="font-mono">{formatTime(r.hundredths!)}</strong>{" "}
+        <VerifiedSeal label="Locked" /> <strong className="font-mono">{formatTime(r.hundredths!)}</strong>{" "}
         <Link href={`/verify/${r.ledgerSeq}`} className="underline underline-offset-4">Certificate / verify (ledger #{r.ledgerSeq})</Link>
       </p>
     );

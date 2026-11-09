@@ -11,6 +11,8 @@ import { ResultStatus } from "@/components/results/result-status";
 import { checkedInIds } from "@/lib/events/server";
 import { coachEntriesFor, resultsFor } from "@/lib/results/server";
 import { resultId } from "@/lib/results/rules";
+import { Hero, JumpLinks, Stat, Stats } from "@/components/dash/parts";
+import { firstName } from "@/lib/auth/display-name";
 import { formatTime } from "@/lib/schemas";
 
 export const metadata = { title: "Coach" };
@@ -24,16 +26,21 @@ export default function Page() {
 }
 
 async function Content() {
-  await requireRole("coach"); // every role page checks for itself, not just the layout
+  const session = await requireRole("coach"); // every role page checks for itself, not just the layout
+  const name = await firstName(session.uid, "coach");
   return (
-    <div className="space-y-10">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Coach area</h1>
-        <p className="text-muted-foreground">
-          Athletes register themselves and the rules decide who is on a start list. If you believe an entry is wrong,
-          you can object on the record. An objection never removes anyone: it goes to the athlete and the tribunal.
-        </p>
-      </div>
+    <div className="tr-dash space-y-6">
+      <Hero
+        image="hero-coach"
+        eyebrow="Coach"
+        title={name ? `Welcome back, Coach ${name}` : "Welcome back, Coach"}
+        subtitle="Athletes register themselves and the rules decide who runs. Your times and objections are signed and on the record."
+      >
+        <JumpLinks links={[{ href: "#results", label: "Enter results" }, { href: "#lists", label: "Start lists" }, { href: "#mine", label: "My objections" }]} />
+      </Hero>
+      <Suspense fallback={<p role="status">Loading your numbers...</p>}>
+        <CoachStats uid={session.uid} />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading results...</p>}>
         <Results />
       </Suspense>
@@ -169,5 +176,25 @@ async function CoachResults({ ev }: { ev: EventView }) {
         )}
       </ul>
     </article>
+  );
+}
+
+async function CoachStats({ uid }: { uid: string }) {
+  await requireRole("coach");
+  const db = adminDb();
+  const [events, mine, entered] = await Promise.all([
+    listEvents(),
+    db.collection("objections").where("createdBy", "==", uid).get(),
+    db.collection("entries").where("createdBy", "==", uid).get(),
+  ]);
+  const open = events.filter((e) => e.registrationOpen).length;
+  const live = events.filter((e) => e.checkInOpen).length;
+  return (
+    <Stats>
+      <Stat tone="feature" label="Open for registration" value={open} hint="Qualifiers athletes can still join" />
+      <Stat tone="peach" label="Race day now" value={live} hint="Qualifiers with check-in open" />
+      <Stat tone="sage" label="Times you signed" value={entered.size} hint="Each one on the record" />
+      <Stat tone="plain" label="Your objections" value={mine.size} hint="Visible to the tribunal" />
+    </Stats>
   );
 }

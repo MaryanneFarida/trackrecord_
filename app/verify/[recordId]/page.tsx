@@ -1,3 +1,4 @@
+import { PublicHeader } from "@/components/public-header";
 import { Suspense, type ReactNode } from "react";
 import { adminDb } from "@/lib/firebase/admin";
 import { docId, LEDGER, HEAD } from "@/lib/ledger/store";
@@ -6,6 +7,7 @@ import { publicKeys } from "@/lib/ledger/server";
 import { formatTime } from "@/lib/schemas";
 import { categoryLabel, formatEAT } from "@/lib/events/rules";
 import { ShareRecord } from "@/components/results/share-record";
+import { VerifiedSeal } from "@/components/dash/verified";
 import Link from "next/link";
 import { groundLabel } from "@/lib/selection/rules";
 import { resultId } from "@/lib/results/rules";
@@ -18,11 +20,14 @@ export const metadata = { title: "Verify a record" };
  */
 export default function VerifyPage({ params }: PageProps<"/verify/[recordId]">) {
   return (
-    <section className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+    <>
+    <PublicHeader />
+    <section className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
       <Suspense fallback={<p role="status">Checking the record...</p>}>
         <RecordView params={params} />
       </Suspense>
     </section>
+    </>
   );
 }
 
@@ -78,7 +83,7 @@ async function RecordView({ params }: { params: PageProps<"/verify/[recordId]">[
     <>
       <Body r={r} ctx={ctx} />
 
-      <div className={`space-y-2 rounded-lg border-2 p-4 ${allOk ? "" : "border-destructive"}`}>
+      <div className={`space-y-2 rounded-[1.5rem] border p-5 ${allOk ? "bg-sage-soft" : "border-destructive bg-peach-soft"}`}>
         <h2 className="text-lg font-semibold">{allOk ? "This record is genuine and unchanged" : "Warning: this record failed a check"}</h2>
         <ul className="space-y-1">
           {checks.map((c) => (
@@ -130,23 +135,28 @@ async function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
   if (r.type === "RESULT_LOCKED") {
     return (
       <>
-        <div className="space-y-3 rounded-lg border-4 border-double p-6 text-center">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">TrackRecord verified result</p>
-          <h1 className="text-3xl font-semibold">{athlete}</h1>
-          <p className="text-lg">
-            {ctx.sportClass ? `Class ${ctx.sportClass} - ` : ""}
-            {String(p.race)}
-          </p>
-          <p className="font-mono text-5xl font-semibold">{formatTime(p.hundredths as number)}</p>
-          <p>
-            {ctx.eventName ?? "Qualifier"}
-            {ctx.venue ? `, ${ctx.venue}` : ""}
-            {ctx.raceStart ? <><br />{formatEAT(ctx.raceStart)}</> : null}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            The coach and the athlete entered this time separately, each signed with their own passkey. The two times
-            matched, so it was locked into TrackRecord&apos;s public record and can never be changed silently.
-          </p>
+        <div className="overflow-hidden rounded-[1.5rem] border bg-card">
+          <div className="tr-lanes flex items-center justify-between gap-3 border-b bg-sage-soft px-6 py-4">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">TrackRecord certificate</span>
+            <VerifiedSeal label="Verified result" />
+          </div>
+          <div className="space-y-4 p-6 text-center md:p-10">
+            <h1 className="text-3xl font-semibold md:text-4xl">{athlete}</h1>
+            <p className="text-lg text-muted-foreground">
+              {ctx.sportClass ? `Class ${ctx.sportClass} \u00b7 ` : ""}
+              {String(p.race)}
+            </p>
+            <p className="tr-num text-6xl font-semibold text-primary md:text-7xl">{formatTime(p.hundredths as number)}</p>
+            <p>
+              {ctx.eventName ?? "Qualifier"}
+              {ctx.venue ? `, ${ctx.venue}` : ""}
+              {ctx.raceStart ? <><br /><span className="text-muted-foreground">{formatEAT(ctx.raceStart)}</span></> : null}
+            </p>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">
+              Entered separately by the coach and the athlete, each signed with their own passkey. The two times matched, so it
+              was locked into TrackRecord&apos;s public record and can never be changed silently.
+            </p>
+          </div>
         </div>
         <ShareRecord title={`Verified result: ${athlete}, ${String(p.race)}`} summary={`${athlete} ran ${String(p.race)} in ${formatTime(p.hundredths as number)} at ${ctx.eventName ?? "a TrackRecord qualifier"}.`} />
       </>

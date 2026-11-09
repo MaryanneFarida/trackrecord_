@@ -1,4 +1,5 @@
-﻿import { Suspense } from "react";
+import { maskEmail } from "@/lib/privacy";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { adminDb } from "@/lib/firebase/admin";
@@ -47,7 +48,7 @@ async function Content({ params }: { params: PageProps<"/invite/[token]">["param
     <>
       <h1 className="text-2xl font-semibold">You&apos;re invited as: {label}</h1>
       <p>
-        Signed in as <strong>{session.email}</strong>. Accepting gives this account the {label} role in TrackRecord.
+        Signed in as <strong>{maskEmail(session.email)}</strong>. Accepting gives this account the {label} role in TrackRecord.
         The invite then stops working.
       </p>
       <AcceptInvite token={token} />
