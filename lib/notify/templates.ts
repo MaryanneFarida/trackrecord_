@@ -7,7 +7,9 @@ export type Template =
   | { kind: "objection_received"; eventName: string; category: string; reason: string }
   | { kind: "objection_answered"; eventName: string; athleteName: string; response: string }
   | { kind: "checkin_refused"; eventName: string }
-  | { kind: "result_locked" | "result_contested"; eventName: string; race: string; seq: number };
+  | { kind: "result_locked" | "result_contested" | "result_decided"; eventName: string; race: string; seq: number }
+  | { kind: "removal_proposed"; selectionName: string; race: string; ground: string; respondBy: string }
+  | { kind: "removal_reviewed"; selectionName: string; race: string; approved: boolean; reason: string };
 
 export function render(t: Template, appUrl: string): { subject: string; text: string } {
   switch (t.kind) {
@@ -44,6 +46,24 @@ export function render(t: Template, appUrl: string): { subject: string; text: st
         text:
           `The coach's time and the athlete's time for ${t.race} at ${t.eventName} did not match. Both times are now on the public record (ledger record #${t.seq}) ` +
           `and neither can be changed. The tribunal decides contested results. See ${appUrl}/verify/${t.seq}`,
+      };
+    case "result_decided":
+      return {
+        subject: `Tribunal decision: ${t.race} at ${t.eventName}`,
+        text: `The tribunal has ruled on the contested ${t.race} result at ${t.eventName}. The decision is public record #${t.seq}: ${appUrl}/verify/${t.seq}`,
+      };
+    case "removal_proposed":
+      return {
+        subject: `Proposed removal from ${t.selectionName}`,
+        text:
+          `The admin has proposed removing you from the ${t.race} places on ${t.selectionName}.\n\nReason: ${t.ground}\n\n` +
+          `NOTHING HAS CHANGED YET. You are still on the list. You can respond until ${t.respondBy} at ${appUrl}/athlete, ` +
+          `and an independent tribunal member must review it before it can take effect.`,
+      };
+    case "removal_reviewed":
+      return {
+        subject: t.approved ? `Removal approved: ${t.selectionName}` : `Removal rejected: you stay on ${t.selectionName}`,
+        text: `${t.approved ? "A tribunal member approved" : "A tribunal member rejected"} the proposed removal from the ${t.race} places on ${t.selectionName}.\n\nTheir reason: ${t.reason}\n\nSee ${appUrl}/athlete`,
       };
     case "checkin_refused":
       return {

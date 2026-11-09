@@ -12,6 +12,8 @@ export const RECORD_TYPES = [
   "SELECTION_RULES", "FINAL_LIST", "REMOVAL", "REMOVAL_RESPONSE", "KEY_ROTATION",
   // Phase 4 (new types are only ever added at the end)
   "EVENT_CREATED", "OBJECTION_RESPONSE",
+  // Phase 7
+  "REMOVAL_REVIEW", "TRIBUNAL_DECISION",
 ] as const;
 export type RecordType = (typeof RECORD_TYPES)[number];
 

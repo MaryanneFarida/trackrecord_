@@ -12,6 +12,15 @@ export function ResultStatus({ r }: { r: ResultDoc }) {
       </p>
     );
   }
+  if (r.status === "decided") {
+    return (
+      <p className="text-sm">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-medium">Decided by the tribunal</span>{" "}
+        <strong className="font-mono">{formatTime(r.finalHundredths!)}</strong>{" "}
+        <Link href={`/verify/${r.decisionSeq}`} className="underline underline-offset-4">Decision (record #{r.decisionSeq})</Link>
+      </p>
+    );
+  }
   return (
     <p className="text-sm">
       <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">Contested</span> coach {formatTime(r.coachHundredths)} vs athlete{" "}

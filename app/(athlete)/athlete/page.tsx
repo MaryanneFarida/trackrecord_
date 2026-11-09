@@ -15,6 +15,8 @@ import { entryId, resultId } from "@/lib/results/rules";
 import { CHECKIN_STATUS } from "@/lib/checkin/summary";
 import { statusId } from "@/lib/checkin/rules";
 import { formatTime } from "@/lib/schemas";
+import { journeysFor } from "@/lib/selection/journey";
+import { JourneyView } from "@/components/selection/journey";
 
 export const metadata = { title: "Athlete" };
 
@@ -47,6 +49,9 @@ async function Content() {
           </p>
         ) : null}
       </div>
+      <Suspense fallback={<p role="status">Loading your road to selection...</p>}>
+        <Journeys uid={session.uid} />
+      </Suspense>
       <Suspense fallback={<p role="status">Loading your objections...</p>}>
         <Objections />
       </Suspense>
@@ -179,5 +184,19 @@ async function MyResults({ ev, uid, races }: { ev: EventView; uid: string; races
         </div>
       ))}
     </div>
+  );
+}
+
+async function Journeys({ uid }: { uid: string }) {
+  await requireRole("athlete");
+  const journeys = await journeysFor(uid);
+  if (journeys.length === 0) return null;
+  return (
+    <section aria-labelledby="journey" className="space-y-4">
+      <h2 id="journey" className="text-xl font-semibold">Your road to selection</h2>
+      {journeys.map((j) => (
+        <JourneyView key={`${j.selection.id}-${j.sportClass}-${j.race}`} j={j} uid={uid} />
+      ))}
+    </section>
   );
 }

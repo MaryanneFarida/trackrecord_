@@ -12,13 +12,16 @@ export interface ResultDoc {
   eventId: string;
   race: string;
   athleteId: string;
-  status: "locked" | "contested";
+  status: "locked" | "contested" | "decided"; // decided = the tribunal ruled on a contested result
   hundredths: number | null; // the agreed time if locked
   coachHundredths: number;
   athleteHundredths: number;
   coachId: string;
   ledgerSeq: number;
   decidedAt: string;
+  finalHundredths?: number; // set by the tribunal
+  decisionSeq?: number; // TRIBUNAL_DECISION record
+  decisionReason?: string;
 }
 
 /**

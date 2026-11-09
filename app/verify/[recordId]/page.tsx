@@ -6,6 +6,9 @@ import { publicKeys } from "@/lib/ledger/server";
 import { formatTime } from "@/lib/schemas";
 import { categoryLabel, formatEAT } from "@/lib/events/rules";
 import { ShareRecord } from "@/components/results/share-record";
+import Link from "next/link";
+import { groundLabel } from "@/lib/selection/rules";
+import { resultId } from "@/lib/results/rules";
 
 export const metadata = { title: "Verify a record" };
 
@@ -120,7 +123,7 @@ function Where({ ctx }: { ctx: Ctx }) {
   );
 }
 
-function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
+async function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
   const p = r.payload as Record<string, unknown>;
   const athlete = ctx.athleteName ?? "The athlete";
 
@@ -151,6 +154,8 @@ function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
   }
 
   if (r.type === "RESULT_CONTESTED") {
+    const decision = await adminDb().collection("results").doc(resultId(String(p.eventId), String(p.race), String(p.athleteId))).get();
+    const decidedSeq = decision.get("status") === "decided" ? (decision.get("decisionSeq") as number) : null;
     const coach = formatTime(p.coachHundredths as number);
     const mine = formatTime(p.athleteHundredths as number);
     const summary = `Contested result: ${athlete}, ${String(p.race)} at ${ctx.eventName ?? "a TrackRecord qualifier"}. The coach entered ${coach}; the athlete entered ${mine}.`;
@@ -175,7 +180,15 @@ function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
             <Row label="Athlete">{athlete}{ctx.sportClass ? ` (class ${ctx.sportClass})` : ""}</Row>
             <Row label="Race">{String(p.race)}</Row>
             <Where ctx={ctx} />
-            <Row label="Status">Waiting for the tribunal</Row>
+            <Row label="Status">
+              {decidedSeq ? (
+                <Link href={`/verify/${decidedSeq}`} className="underline underline-offset-2">
+                  Decided by the tribunal: {formatTime(decision.get("finalHundredths"))} (record #{decidedSeq})
+                </Link>
+              ) : (
+                "Waiting for the tribunal"
+              )}
+            </Row>
           </dl>
           <div className="space-y-2 rounded-lg bg-muted p-4">
             <h2 className="font-semibold">What happens now</h2>
@@ -224,6 +237,61 @@ function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
           <Row label="Meaning">An objection removes nobody. The athlete was told and can answer it.</Row>
         </dl>
       ),
+    },
+    SELECTION_RULES: {
+      title: "Selection rules were published",
+      lines: (
+        <dl>
+          <Row label="Selection">{String(p.name)}</Row>
+          <Row label="Qualifiers">{(p.qualifierIds as string[]).length} counting</Row>
+          <Row label="Places">{(p.quotas as { sportClass: string; race: string; places: number }[]).map((q) => `${q.sportClass} ${q.race}: ${q.places}`).join(", ")}</Row>
+          <Row label="Meaning">Published before results counted. These rules can never be edited.</Row>
+          <Row label="List"><Link href={`/selection/${String(p.selectionId)}`} className="underline underline-offset-2">See the standings or final list</Link></Row>
+        </dl>
+      ),
+    },
+    FINAL_LIST: {
+      title: `Final list generated (version ${String(p.version)})`,
+      lines: (
+        <dl>
+          <Row label="Made by">{(p.cause as { by: string; removalId?: string }).removalId ? "Recomputed automatically after an approved removal or withdrawal" : "Generated from the published rules"}</Row>
+          <Row label="Selected">{(p.quotas as { selected: unknown[] }[]).reduce((n, q) => n + q.selected.length, 0)} athletes</Row>
+          <Row label="List"><Link href={`/selection/${String(p.selectionId)}`} className="underline underline-offset-2">See the names and times</Link></Row>
+        </dl>
+      ),
+    },
+    REMOVAL: {
+      title: p.ground === "voluntary" ? "An athlete withdrew (signed by the athlete)" : "A removal was proposed",
+      lines: (
+        <dl>
+          {ctx.athleteName ? <Row label="Athlete">{ctx.athleteName}</Row> : null}
+          <Row label="Race">{`${String(p.sportClass)} ${String(p.race)}`}</Row>
+          <Row label="Reason">{groundLabel(String(p.ground))}</Row>
+          {p.ground !== "voluntary" ? <Row label="Evidence">{String(p.evidenceRef)}</Row> : null}
+          {p.ground !== "voluntary" ? <Row label="Meaning">Nothing changes until an independent tribunal member reviews it. The athlete can respond first.</Row> : null}
+          <Row label="List"><Link href={`/selection/${String(p.selectionId)}`} className="underline underline-offset-2">See the list and every removal</Link></Row>
+        </dl>
+      ),
+    },
+    REMOVAL_REVIEW: {
+      title: p.decision === "approved" ? "A tribunal member APPROVED a removal" : "A tribunal member REJECTED a removal",
+      lines: <p>{p.decision === "approved" ? "The final list was recomputed and the next athlete moved up." : "The athlete stays on the list."} The reviewer&apos;s reason is shown on the list page.</p>,
+    },
+    TRIBUNAL_DECISION: {
+      title: "The tribunal decided a contested result",
+      lines: (
+        <dl>
+          {ctx.athleteName ? <Row label="Athlete">{ctx.athleteName}</Row> : null}
+          <Row label="Race">{String(p.race)}</Row>
+          <Where ctx={ctx} />
+          <Row label="Final time"><span className="font-mono">{formatTime(p.hundredths as number)}</span></Row>
+          <Row label="Dispute"><Link href={`/verify/${String(p.contestedSeq)}`} className="underline underline-offset-2">The original contested record #{String(p.contestedSeq)} stays visible</Link></Row>
+        </dl>
+      ),
+    },
+    REMOVAL_RESPONSE: {
+      title: "An athlete responded to a proposed removal",
+      lines: <p>The response is shown with the removal on the list page, and the tribunal reads it before deciding.</p>,
     },
     OBJECTION_RESPONSE: {
       title: "An athlete answered an objection",
