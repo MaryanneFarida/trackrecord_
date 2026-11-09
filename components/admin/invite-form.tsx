@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -78,7 +78,7 @@ export function InviteForm() {
         <Label htmlFor="invite-note">Note (for your records, e.g. &quot;Nakuru region coach&quot;)</Label>
         <Input id="invite-note" className="h-11 text-base" value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
-      <Button type="submit" className="h-11 px-5 text-base" disabled={busy}>Create invite link</Button>
+      <Button type="submit" className="min-h-11 px-5 text-base" disabled={busy}>Create invite link</Button>
       <p role="status" aria-live="polite">{message}</p>
       {link ? (
         <div className="space-y-2">

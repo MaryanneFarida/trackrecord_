@@ -42,7 +42,7 @@ export function RespondForm({ objectionId }: { objectionId: string }) {
         <Label htmlFor={`resp-${objectionId}`}>Your answer (you can answer once; the coach and tribunal will see it)</Label>
         <textarea id={`resp-${objectionId}`} rows={4} maxLength={1000} className="w-full rounded-md border bg-background p-3 text-base" value={response} onChange={(e) => setResponse(e.target.value)} />
       </div>
-      <Button type="submit" className="h-11 px-5 text-base" disabled={busy}>Sign and send answer</Button>
+      <Button type="submit" className="min-h-11 px-5 text-base" disabled={busy}>Sign and send answer</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );

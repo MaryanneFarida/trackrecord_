@@ -64,7 +64,7 @@ export function MyCheckInCode({ eventId, name, sportClass }: { eventId: string; 
 
   if (!open) {
     return (
-      <Button className="h-12 px-5 text-base" onClick={() => setOpen(true)}>
+      <Button className="min-h-12 px-5 text-base" onClick={() => setOpen(true)}>
         Show my check-in code
       </Button>
     );
@@ -89,7 +89,7 @@ export function MyCheckInCode({ eventId, name, sportClass }: { eventId: string; 
         </p>
       ) : null}
       {state.kind === "error" ? <p role="alert">{state.message}</p> : null}
-      <Button variant="outline" className="h-11" onClick={() => { setOpen(false); setState({ kind: "idle" }); }}>
+      <Button variant="outline" className="min-h-11" onClick={() => { setOpen(false); setState({ kind: "idle" }); }}>
         Hide code
       </Button>
     </div>

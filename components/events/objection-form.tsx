@@ -61,7 +61,7 @@ export function ObjectionForm({ eventId, athleteId, athleteName }: { eventId: st
           <Label htmlFor={`reason-${id}`}>Reason (at least {MIN_REASON} characters; the athlete reads this)</Label>
           <textarea id={`reason-${id}`} rows={4} maxLength={1000} className="w-full rounded-md border bg-background p-3 text-base" value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
-        <Button type="submit" variant="destructive" className="h-11 px-5 text-base" disabled={busy}>Sign and record objection</Button>
+        <Button type="submit" variant="destructive" className="min-h-11 px-5 text-base" disabled={busy}>Sign and record objection</Button>
         <p role="status" aria-live="polite">{message}</p>
       </form>
     </details>

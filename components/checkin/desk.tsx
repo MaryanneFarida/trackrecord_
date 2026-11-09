@@ -137,10 +137,10 @@ export function CheckInDesk({ events }: { events: { id: string; name: string; ro
           {scanning ? (
             <>
               <video ref={video} className="w-full rounded-md bg-black" muted playsInline aria-label="Camera view for scanning" />
-              <Button variant="outline" className="h-11" onClick={() => setScanning(false)}>Stop camera</Button>
+              <Button variant="outline" className="min-h-11" onClick={() => setScanning(false)}>Stop camera</Button>
             </>
           ) : (
-            <Button className="h-12 px-5 text-base" onClick={() => { setMessage(""); setScanning(true); }}>Scan an athlete&apos;s code</Button>
+            <Button className="min-h-12 px-5 text-base" onClick={() => { setMessage(""); setScanning(true); }}>Scan an athlete&apos;s code</Button>
           )}
           <form
             className="space-y-2 rounded-md border p-3"
@@ -164,7 +164,7 @@ export function CheckInDesk({ events }: { events: { id: string; name: string; ro
               <Label htmlFor="desk-code">6-digit code on their screen</Label>
               <Input id="desk-code" inputMode="numeric" maxLength={6} className="h-11 font-mono text-lg tracking-widest" value={manualCode} onChange={(e) => setManualCode(e.target.value.replace(/\D/g, ""))} />
             </div>
-            <Button type="submit" variant="outline" className="h-11">Check code</Button>
+            <Button type="submit" variant="outline" className="min-h-11">Check code</Button>
           </form>
         </div>
       ) : (
@@ -190,9 +190,9 @@ export function CheckInDesk({ events }: { events: { id: string; name: string; ro
             </div>
           ) : null}
           <div className="flex flex-wrap gap-3">
-            <Button className="h-12 px-5 text-base" disabled={busy || !found.athlete.selfie} onClick={() => decide("checked_in")}>Same person: check in</Button>
-            <Button variant="destructive" className="h-12 px-5 text-base" disabled={busy} onClick={() => decide("refused_face")}>Face doesn&apos;t match</Button>
-            <Button variant="outline" className="h-12" disabled={busy} onClick={() => setFound(null)}>Cancel</Button>
+            <Button className="min-h-12 px-5 text-base" disabled={busy || !found.athlete.selfie} onClick={() => decide("checked_in")}>Same person: check in</Button>
+            <Button variant="destructive" className="min-h-12 px-5 text-base" disabled={busy} onClick={() => decide("refused_face")}>Face doesn&apos;t match</Button>
+            <Button variant="outline" className="min-h-12" disabled={busy} onClick={() => setFound(null)}>Cancel</Button>
           </div>
         </article>
       )}

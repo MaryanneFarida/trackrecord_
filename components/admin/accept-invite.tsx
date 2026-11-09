@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,7 @@ export function AcceptInvite({ token }: { token: string }) {
 
   return (
     <div className="space-y-3">
-      <Button className="h-11 w-full text-base" onClick={accept} disabled={busy}>Accept invite</Button>
+      <Button className="min-h-11 w-full text-base" onClick={accept} disabled={busy}>Accept invite</Button>
       <p role="status" aria-live="polite">{message}</p>
     </div>
   );

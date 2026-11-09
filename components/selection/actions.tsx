@@ -23,7 +23,7 @@ export function GenerateButton({ selectionId, blockers }: { selectionId: string;
   }
   return (
     <div className="space-y-2">
-      <Button className="h-11 px-5 text-base" disabled={busy} onClick={() => run<{ ledgerSeq: number }>("/api/admin/selection/generate", { action: "selection.generate", selectionId }, (r) => `Final list generated: public record #${r.ledgerSeq}.`)}>
+      <Button className="min-h-11 px-5 text-base" disabled={busy} onClick={() => run<{ ledgerSeq: number }>("/api/admin/selection/generate", { action: "selection.generate", selectionId }, (r) => `Final list generated: public record #${r.ledgerSeq}.`)}>
         Generate the final list
       </Button>
       <p role="status" aria-live="polite">{message}</p>
@@ -66,7 +66,7 @@ export function ProposeRemoval(props: { selectionId: string; athleteId: string; 
           <Label htmlFor={`n-${id}`}>Explanation (public, at least 20 characters)</Label>
           <textarea id={`n-${id}`} rows={3} maxLength={1000} className={area} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
-        <Button type="submit" variant="destructive" className="h-11" disabled={busy}>Sign and propose</Button>
+        <Button type="submit" variant="destructive" className="min-h-11" disabled={busy}>Sign and propose</Button>
         <p role="status" aria-live="polite">{message}</p>
       </form>
     </details>
@@ -88,7 +88,7 @@ export function RespondRemoval({ removalId }: { removalId: string }) {
     >
       <Label htmlFor={`r-${removalId}`}>Your response (the tribunal and the public will see it)</Label>
       <textarea id={`r-${removalId}`} rows={4} maxLength={1000} className={area} value={text} onChange={(e) => setText(e.target.value)} />
-      <Button type="submit" className="h-11" disabled={busy}>Sign and send</Button>
+      <Button type="submit" className="min-h-11" disabled={busy}>Sign and send</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );
@@ -101,13 +101,13 @@ export function WithdrawButton(props: { selectionId: string; athleteId: string; 
   return (
     <div className="space-y-2 text-sm">
       {!sure ? (
-        <Button variant="outline" className="h-11" onClick={() => setSure(true)}>Withdraw from {props.race}</Button>
+        <Button variant="outline" className="min-h-11" onClick={() => setSure(true)}>Withdraw from {props.race}</Button>
       ) : (
         <div className="space-y-2 rounded-md border p-3">
           <p>This gives your place to the next athlete and can&apos;t be undone. Only you can do this.</p>
           <div className="flex gap-2">
-            <Button variant="destructive" className="h-11" disabled={busy} onClick={() => run("/api/removals/withdraw", { action: "removal.withdraw", ...props }, () => "You have withdrawn. The next athlete has moved up.")}>Yes, withdraw</Button>
-            <Button variant="outline" className="h-11" onClick={() => setSure(false)}>Keep my place</Button>
+            <Button variant="destructive" className="min-h-11" disabled={busy} onClick={() => run("/api/removals/withdraw", { action: "removal.withdraw", ...props }, () => "You have withdrawn. The next athlete has moved up.")}>Yes, withdraw</Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setSure(false)}>Keep my place</Button>
           </div>
         </div>
       )}
@@ -130,8 +130,8 @@ export function ReviewRemoval({ removalId, ready }: { removalId: string; ready: 
       <Label htmlFor={`rv-${removalId}`}>Your reason (public)</Label>
       <textarea id={`rv-${removalId}`} rows={3} maxLength={1000} className={area} value={reason} onChange={(e) => setReason(e.target.value)} />
       <div className="flex flex-wrap gap-2">
-        <Button variant="destructive" className="h-11" disabled={busy} onClick={() => go("approve")}>Approve removal</Button>
-        <Button className="h-11" disabled={busy} onClick={() => go("reject")}>Reject: athlete stays</Button>
+        <Button variant="destructive" className="min-h-11" disabled={busy} onClick={() => go("approve")}>Approve removal</Button>
+        <Button className="min-h-11" disabled={busy} onClick={() => go("reject")}>Reject: athlete stays</Button>
       </div>
       <p role="status" aria-live="polite">{message}</p>
     </div>
@@ -163,7 +163,7 @@ export function DecideResult(props: { eventId: string; race: string; athleteId: 
         <Label htmlFor={`dr-${id}`}>Reason and evidence used (public)</Label>
         <textarea id={`dr-${id}`} rows={3} maxLength={1000} className={area} value={reason} onChange={(e) => setReason(e.target.value)} />
       </div>
-      <Button type="submit" className="h-11" disabled={busy}>Sign decision</Button>
+      <Button type="submit" className="min-h-11" disabled={busy}>Sign decision</Button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );

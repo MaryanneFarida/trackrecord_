@@ -43,12 +43,12 @@ export function ShareRecord({ title, summary, primary = false }: { title: string
   return (
     <div className="space-y-2 print:hidden">
       <div className="flex flex-wrap gap-2">
-        <Button className="h-11 px-5 text-base" variant={primary ? "default" : "outline"} onClick={share}>
+        <Button className="min-h-11 px-5 text-base" variant={primary ? "default" : "outline"} onClick={share}>
           {primary ? "Share with the tribunal" : "Share"}
         </Button>
-        <Button className="h-11" variant="outline" onClick={email}>Email this record</Button>
-        <Button className="h-11" variant="outline" onClick={copy}>Copy link</Button>
-        <Button className="h-11" variant="outline" onClick={() => window.print()}>Print or save as PDF</Button>
+        <Button className="min-h-11" variant="outline" onClick={email}>Email this record</Button>
+        <Button className="min-h-11" variant="outline" onClick={copy}>Copy link</Button>
+        <Button className="min-h-11" variant="outline" onClick={() => window.print()}>Print or save as PDF</Button>
       </div>
       <p role="status" aria-live="polite" className="text-sm">{message}</p>
     </div>

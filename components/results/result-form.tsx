@@ -56,7 +56,7 @@ export function ResultForm({ eventId, race, athleteId, label }: { eventId: strin
         <Label htmlFor={id}>{label}</Label>
         <Input id={id} inputMode="decimal" placeholder="52.31" className="h-11 w-36 font-mono text-lg" value={text} onChange={(e) => setText(e.target.value)} />
       </div>
-      <Button type="submit" className="h-11" disabled={busy}>Sign time</Button>
+      <Button type="submit" className="min-h-11" disabled={busy}>Sign time</Button>
       <p role="status" aria-live="polite" className="w-full text-sm">{message}</p>
     </form>
   );

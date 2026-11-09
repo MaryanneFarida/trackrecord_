@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -54,7 +54,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <Button type="submit" className="h-11 w-full text-base" disabled={status === "sending"}>
+        <Button type="submit" className="min-h-11 w-full text-base" disabled={status === "sending"}>
           Email me a sign-in link
         </Button>
       </form>
@@ -63,7 +63,7 @@ export function LoginForm() {
         <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
       </div>
 
-      <Button variant="outline" className="h-11 w-full text-base" onClick={onGoogle} disabled={status === "sending"}>
+      <Button variant="outline" className="min-h-11 w-full text-base" onClick={onGoogle} disabled={status === "sending"}>
         Continue with Google
       </Button>
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -66,7 +66,7 @@ export function FinishSignIn() {
           <Label htmlFor="email">Email address</Label>
           <Input id="email" type="email" required className="h-11 text-base" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <Button type="submit" className="h-11 w-full text-base">Continue</Button>
+        <Button type="submit" className="min-h-11 w-full text-base">Continue</Button>
       </form>
     );
   }

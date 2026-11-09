@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -61,10 +61,10 @@ export function ReviewActions({ athleteUid, name }: { athleteUid: string; name: 
         <Input id={`note-${athleteUid}`} className="h-11 text-base" value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
       <div className="flex flex-wrap gap-3">
-        <Button className="h-11 px-5 text-base" onClick={() => decide("approve")} disabled={busy}>
+        <Button className="min-h-11 px-5 text-base" onClick={() => decide("approve")} disabled={busy}>
           Approve: ID matches selfie
         </Button>
-        <Button variant="outline" className="h-11 px-5 text-base" onClick={() => decide("reject")} disabled={busy}>
+        <Button variant="outline" className="min-h-11 px-5 text-base" onClick={() => decide("reject")} disabled={busy}>
           Reject with this reason
         </Button>
       </div>

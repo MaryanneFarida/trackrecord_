@@ -31,7 +31,7 @@ export function LedgerHealth() {
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
-      <Button className="h-11 px-5 text-base" onClick={check} disabled={busy}>
+      <Button className="min-h-11 px-5 text-base" onClick={check} disabled={busy}>
         {busy ? "Checking..." : "Verify the whole ledger now"}
       </Button>
       <div role="status" aria-live="polite">
