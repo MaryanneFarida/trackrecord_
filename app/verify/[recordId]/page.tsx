@@ -11,6 +11,7 @@ import { VerifiedSeal } from "@/components/dash/verified";
 import Link from "next/link";
 import { groundLabel } from "@/lib/selection/rules";
 import { resultId } from "@/lib/results/rules";
+import { markRestored, reportTamper } from "@/lib/ledger/tamper-cases";
 
 export const metadata = { title: "Verify a record" };
 
@@ -78,6 +79,8 @@ async function RecordView({ params }: { params: PageProps<"/verify/[recordId]">[
     { label: "Nothing after it has been removed or rewritten", ok: next.exists ? next.get("prevHash") === r.hash : (head.get("seq") as number) === seq && head.get("hash") === r.hash },
   ];
   const allOk = checks.every((c) => c.ok);
+  if (allOk) markRestored(seq);
+  else reportTamper(seq, checks.flatMap((c, i) => (c.ok ? [] : [["hash_mismatch", "bad_signature", "broken_link", "head_mismatch"][i]])), "public verify page");
 
   return (
     <>
