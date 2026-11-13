@@ -81,7 +81,8 @@ async function RecordView({ params }: { params: PageProps<"/verify/[recordId]">[
 
   return (
     <>
-      <Body r={r} ctx={ctx} />
+      {allOk ? null : <TamperBanner seq={r.seq} failed={checks.filter((c) => !c.ok).map((c) => c.label)} />}
+      <Body r={r} ctx={ctx} tampered={!allOk} />
 
       <div className={`space-y-2 rounded-[1.5rem] border p-5 ${allOk ? "bg-sage-soft" : "border-destructive bg-peach-soft"}`}>
         <h2 className="text-lg font-semibold">{allOk ? "This record is genuine and unchanged" : "Warning: this record failed a check"}</h2>
@@ -128,17 +129,41 @@ function Where({ ctx }: { ctx: Ctx }) {
   );
 }
 
-async function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
+/** Shown at the very top when any check fails, so nobody can miss it or mistake the record for genuine. */
+function TamperBanner({ seq, failed }: { seq: number; failed: string[] }) {
+  return (
+    <div role="alert" className="space-y-3 rounded-[1.5rem] border-2 border-destructive bg-destructive p-6 text-white shadow-lg">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-90">Record #{seq} &middot; Failed verification</p>
+      <h1 className="text-3xl font-semibold md:text-4xl">&#9888; This record has been tampered with</h1>
+      <p className="text-base">
+        Someone changed this record after it was locked. What you see below is <strong>not</strong> the original and must not be trusted.
+      </p>
+      <ul className="space-y-1 font-medium">
+        {failed.map((label) => (
+          <li key={label}>
+            <span aria-hidden="true">{"\u2717"}</span> {label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+async function Body({ r, ctx, tampered = false }: { r: LedgerRecord; ctx: Ctx; tampered?: boolean }) {
   const p = r.payload as Record<string, unknown>;
   const athlete = ctx.athleteName ?? "The athlete";
 
   if (r.type === "RESULT_LOCKED") {
     return (
       <>
-        <div className="overflow-hidden rounded-[1.5rem] border bg-card">
-          <div className="tr-lanes flex items-center justify-between gap-3 border-b bg-sage-soft px-6 py-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">TrackRecord certificate &middot; Record #{r.seq}</span>
-            <VerifiedSeal label="Verified result" />
+        <div className={`overflow-hidden rounded-[1.5rem] border bg-card ${tampered ? "border-2 border-destructive" : ""}`}>
+          <div className={`flex items-center justify-between gap-3 border-b px-6 py-4 ${tampered ? "border-destructive bg-destructive/10" : "tr-lanes bg-sage-soft"}`}>
+            <span className={`text-xs font-semibold uppercase tracking-[0.2em] ${tampered ? "text-destructive" : "text-primary"}`}>TrackRecord certificate &middot; Record #{r.seq}</span>
+            {tampered ? (
+              <span className="text-sm font-semibold text-destructive">{"\u2717"} Failed check</span>
+            ) : (
+              <VerifiedSeal label="Verified result" />
+            )}
           </div>
           <div className="space-y-4 p-6 text-center md:p-10">
             <h1 className="text-3xl font-semibold md:text-4xl">{athlete}</h1>
@@ -146,19 +171,21 @@ async function Body({ r, ctx }: { r: LedgerRecord; ctx: Ctx }) {
               {ctx.sportClass ? `Class ${ctx.sportClass} \u00b7 ` : ""}
               {String(p.race)}
             </p>
-            <p className="tr-num text-6xl font-semibold text-primary md:text-7xl">{formatTime(p.hundredths as number)}</p>
+            <p className={`tr-num text-6xl font-semibold md:text-7xl ${tampered ? "text-destructive line-through decoration-4" : "text-primary"}`}>{formatTime(p.hundredths as number)}</p>
+            {tampered ? <p className="font-semibold text-destructive">This time was altered. Do not trust it.</p> : null}
             <p>
               {ctx.eventName ?? "Qualifier"}
               {ctx.venue ? `, ${ctx.venue}` : ""}
               {ctx.raceStart ? <><br /><span className="text-muted-foreground">{formatEAT(ctx.raceStart)}</span></> : null}
             </p>
             <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              Entered separately by the coach and the athlete, each signed with their own passkey. The two times matched, so it
-              was locked into TrackRecord&apos;s public record and can never be changed silently.
+              {tampered
+                ? "This record no longer matches what was confirmed and locked. TrackRecord caught the change: the original can still be proven from the record before and after it."
+                : "Entered separately by the coach and the athlete, each signed with their own passkey. The two times matched, so it was locked into TrackRecord\u2019s public record and can never be changed silently."}
             </p>
           </div>
         </div>
-        <ShareRecord title={`Verified result: ${athlete}, ${String(p.race)}`} summary={`${athlete} ran ${String(p.race)} in ${formatTime(p.hundredths as number)} at ${ctx.eventName ?? "a TrackRecord qualifier"}.`} />
+        {tampered ? null : <ShareRecord title={`Verified result: ${athlete}, ${String(p.race)}`} summary={`${athlete} ran ${String(p.race)} in ${formatTime(p.hundredths as number)} at ${ctx.eventName ?? "a TrackRecord qualifier"}.`} />}
       </>
     );
   }
