@@ -4,6 +4,7 @@ import { ROLE_LABELS, type Role } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Brand } from "@/components/brand";
+import { TamperNotices } from "@/components/tamper-notices";
 
 /**
  * Shared frame for every role area, and the role guard.
@@ -21,7 +22,7 @@ export function RoleShell({ role, children }: { role: Role; children: ReactNode 
 }
 
 async function Guard({ role, children }: { role: Role; children: ReactNode }) {
-  await requireRole(role);
+  const session = await requireRole(role);
   return (
     <>
       <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
@@ -39,6 +40,7 @@ async function Guard({ role, children }: { role: Role; children: ReactNode }) {
           </div>
         </nav>
       </header>
+      <TamperNotices uid={session.uid} role={role} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 md:py-8">{children}</main>
       <footer className="tr-ticker mt-8 overflow-hidden whitespace-nowrap py-3 text-sm font-medium tracking-[0.2em]" aria-hidden="true">
         SEALED START LISTS &middot; SIGNED RESULTS &middot; PUBLIC PROOF &middot; NOTHING CHANGES SILENTLY &middot; SEALED START LISTS &middot; SIGNED RESULTS &middot; PUBLIC PROOF
